@@ -1,0 +1,33 @@
+{
+  "name": "habit-tracker",
+  "version": "1.0.0",
+  "description": "A habit tracking webapp that blocks websites when habits aren't completed",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w @habit-tracker/backend\" \"npm run dev -w @habit-tracker/frontend\" \"npm run dev -w @habit-tracker/daemon\"",
+    "build": "npm run build -w @habit-tracker/shared && npm run build -w @habit-tracker/backend && npm run build -w @habit-tracker/daemon && npm run build -w @habit-tracker/frontend",
+    "test": "npm run test --workspaces --if-present",
+    "test:unit": "npm run test:unit --workspaces --if-present",
+    "test:e2e": "npm run test -w @habit-tracker/e2e",
+    "test:bdd": "npm run test:bdd -w @habit-tracker/e2e",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "concurrently": "^8.2.2",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "@habit-tracker/daemon",
+  "version": "1.0.0",
+  "description": "Background service for managing hosts file blocking",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src --ext .ts",
+    "install:daemon": "bash ../../scripts/install-daemon.sh",
+    "uninstall:daemon": "bash ../../scripts/uninstall-daemon.sh"
+  },
+  "dependencies": {
+    "@habit-tracker/shared": "1.0.0",
+    "drizzle-orm": "^0.29.3",
+    "better-sqlite3": "^9.3.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.9",
+    "@types/jest": "^29.5.11",
+    "@types/node": "^20.11.5",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

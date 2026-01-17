@@ -1,0 +1,19 @@
+{
+  "name": "@habit-tracker/e2e",
+  "version": "1.0.0",
+  "description": "End-to-end and BDD tests for habit tracker",
+  "scripts": {
+    "test": "playwright test",
+    "test:bdd": "cucumber-js",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug"
+  },
+  "dependencies": {
+    "@cucumber/cucumber": "^10.1.0",
+    "@playwright/test": "^1.41.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "typescript": "^5.3.3"
+  }
+}

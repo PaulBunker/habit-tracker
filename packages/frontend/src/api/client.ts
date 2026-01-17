@@ -1,0 +1,85 @@
+import type {
+  Habit,
+  HabitLog,
+  CreateHabitRequest,
+  UpdateHabitRequest,
+  CompleteHabitRequest,
+  SkipHabitRequest,
+  DaemonStatus,
+  ApiResponse,
+} from '@habit-tracker/shared';
+
+const API_BASE_URL = '/api';
+
+async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+    ...options,
+  });
+
+  const data = await response.json();
+  return data;
+}
+
+export const habitsApi = {
+  async getAll(): Promise<ApiResponse<Habit[]>> {
+    return fetchApi<Habit[]>('/habits');
+  },
+
+  async getById(id: string): Promise<ApiResponse<Habit>> {
+    return fetchApi<Habit>(`/habits/${id}`);
+  },
+
+  async create(data: CreateHabitRequest): Promise<ApiResponse<Habit>> {
+    return fetchApi<Habit>('/habits', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async update(id: string, data: UpdateHabitRequest): Promise<ApiResponse<Habit>> {
+    return fetchApi<Habit>(`/habits/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(id: string): Promise<ApiResponse<void>> {
+    return fetchApi<void>(`/habits/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async complete(id: string, data: CompleteHabitRequest): Promise<ApiResponse<HabitLog>> {
+    return fetchApi<HabitLog>(`/habits/${id}/complete`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async skip(id: string, data: SkipHabitRequest): Promise<ApiResponse<HabitLog>> {
+    return fetchApi<HabitLog>(`/habits/${id}/skip`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getLogs(id: string): Promise<ApiResponse<HabitLog[]>> {
+    return fetchApi<HabitLog[]>(`/habits/${id}/logs`);
+  },
+};
+
+export const statusApi = {
+  async getStatus(): Promise<ApiResponse<DaemonStatus>> {
+    return fetchApi<DaemonStatus>('/status');
+  },
+
+  async triggerSync(): Promise<ApiResponse<void>> {
+    return fetchApi<void>('/daemon/sync', {
+      method: 'POST',
+    });
+  },
+};
