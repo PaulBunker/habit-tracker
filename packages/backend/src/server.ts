@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import habitsRouter from './routes/habits';
+import settingsRouter from './routes/settings';
 import statusRouter from './routes/status';
 import { errorHandler } from './middleware/error-handler';
 
@@ -13,6 +14,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/habits', habitsRouter);
+app.use('/api/settings', settingsRouter);
 app.use('/api', statusRouter);
 
 // Health check

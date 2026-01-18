@@ -7,6 +7,9 @@ import type {
   SkipHabitRequest,
   DaemonStatus,
   ApiResponse,
+  AppSettings,
+  CalendarDay,
+  GraphDataPoint,
 } from '@habit-tracker/shared';
 
 const API_BASE_URL = '/api';
@@ -69,6 +72,49 @@ export const habitsApi = {
 
   async getLogs(id: string): Promise<ApiResponse<HabitLog[]>> {
     return fetchApi<HabitLog[]>(`/habits/${id}/logs`);
+  },
+
+  async getCalendar(id: string, start?: string, end?: string): Promise<ApiResponse<CalendarDay[]>> {
+    const params = new URLSearchParams();
+    if (start) params.append('start', start);
+    if (end) params.append('end', end);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return fetchApi<CalendarDay[]>(`/habits/${id}/calendar${query}`);
+  },
+
+  async getGraph(id: string, start?: string, end?: string): Promise<ApiResponse<{ unit?: string; points: GraphDataPoint[] }>> {
+    const params = new URLSearchParams();
+    if (start) params.append('start', start);
+    if (end) params.append('end', end);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return fetchApi<{ unit?: string; points: GraphDataPoint[] }>(`/habits/${id}/graph${query}`);
+  },
+};
+
+export const settingsApi = {
+  async get(): Promise<ApiResponse<AppSettings>> {
+    return fetchApi<AppSettings>('/settings');
+  },
+
+  async update(data: Partial<AppSettings>): Promise<ApiResponse<AppSettings>> {
+    return fetchApi<AppSettings>('/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async addBlockedWebsite(website: string): Promise<ApiResponse<{ blockedWebsites: string[] }>> {
+    return fetchApi<{ blockedWebsites: string[] }>('/settings/blocked-websites', {
+      method: 'POST',
+      body: JSON.stringify({ website }),
+    });
+  },
+
+  async removeBlockedWebsite(website: string): Promise<ApiResponse<{ blockedWebsites: string[] }>> {
+    return fetchApi<{ blockedWebsites: string[] }>('/settings/blocked-websites', {
+      method: 'DELETE',
+      body: JSON.stringify({ website }),
+    });
   },
 };
 

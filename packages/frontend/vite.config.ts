@@ -16,4 +16,8 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
   },
+  resolve: {
+    // Explicitly prefer ESM exports
+    conditions: ['import', 'module', 'browser', 'default'],
+  },
 });

@@ -1,5 +1,5 @@
 import { db } from './index';
-import { habits, habitLogs } from './schema';
+import { habits, habitLogs, settings } from './schema';
 import { randomUUID } from 'crypto';
 
 async function seed() {
@@ -8,10 +8,12 @@ async function seed() {
   // Clear existing data
   await db.delete(habitLogs);
   await db.delete(habits);
+  await db.delete(settings);
 
-  // Create sample habits
+  // Create sample habits (v2 schema)
   const morningExerciseId = randomUUID();
   const studySessionId = randomUUID();
+  const weightTrackingId = randomUUID();
   const eveningReadingId = randomUUID();
 
   await db.insert(habits).values([
@@ -19,28 +21,49 @@ async function seed() {
       id: morningExerciseId,
       name: 'Morning Exercise',
       description: 'Do at least 30 minutes of exercise',
-      deadlineUtc: '13:00', // 9:00 AM EST (UTC-4)
+      startTimeUtc: '12:00', // 8:00 AM EST - blocking starts
+      deadlineUtc: '13:00', // 9:00 AM EST - deadline
       timezoneOffset: -240, // EST offset in minutes
-      blockedWebsites: JSON.stringify(['reddit.com', 'twitter.com']),
+      dataTracking: false,
+      activeDays: JSON.stringify([1, 2, 3, 4, 5]), // Weekdays only
       isActive: true,
     },
     {
       id: studySessionId,
       name: 'Study Session',
       description: 'Focus on learning for 2 hours',
+      startTimeUtc: '16:00', // 12:00 PM EST
       deadlineUtc: '18:00', // 2:00 PM EST
       timezoneOffset: -240,
-      blockedWebsites: JSON.stringify(['youtube.com', 'instagram.com']),
+      dataTracking: false,
+      isActive: true,
+    },
+    {
+      id: weightTrackingId,
+      name: 'Weight Tracking',
+      description: 'Log daily weight',
+      timezoneOffset: -240,
+      dataTracking: true,
+      dataUnit: 'lbs',
       isActive: true,
     },
     {
       id: eveningReadingId,
       name: 'Evening Reading',
       description: 'Read for at least 30 minutes',
-      deadlineUtc: '01:00', // 9:00 PM EST (previous day in UTC)
+      deadlineUtc: '01:00', // 9:00 PM EST
       timezoneOffset: -240,
-      blockedWebsites: JSON.stringify(['facebook.com', 'tiktok.com']),
+      dataTracking: false,
       isActive: true,
+    },
+  ]);
+
+  // Create global settings (v2: blocked websites are now global)
+  await db.insert(settings).values([
+    {
+      key: 'blockedWebsites',
+      value: JSON.stringify(['reddit.com', 'twitter.com', 'youtube.com', 'instagram.com', 'facebook.com', 'tiktok.com']),
+      updatedAt: new Date().toISOString(),
     },
   ]);
 
@@ -64,6 +87,22 @@ async function seed() {
       date: yesterday,
       status: 'completed',
       completedAt: new Date(Date.now() - 86400000).toISOString(),
+    },
+    {
+      id: randomUUID(),
+      habitId: weightTrackingId,
+      date: twoDaysAgo,
+      status: 'completed',
+      completedAt: new Date(Date.now() - 172800000).toISOString(),
+      dataValue: 185.5,
+    },
+    {
+      id: randomUUID(),
+      habitId: weightTrackingId,
+      date: yesterday,
+      status: 'completed',
+      completedAt: new Date(Date.now() - 86400000).toISOString(),
+      dataValue: 185.0,
     },
     {
       id: randomUUID(),
