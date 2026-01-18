@@ -231,6 +231,29 @@ kill -9 <PID>
 bash scripts/install-production.sh
 ```
 
+## Chrome Integration
+
+Setting Chrome to open the Habit Tracker creates a helpful workflow: when a blocked website redirects you, quickly access Habit Tracker to see which habits need completing.
+
+### Recommended: Bookmark
+
+The simplest approach is to bookmark the Habit Tracker:
+
+1. Open http://localhost:5173 in Chrome
+2. Press **⌘D** (or click the star in the address bar)
+3. Save to **Bookmarks bar** for easy access
+
+### Alternative: Startup Page
+
+To open Habit Tracker automatically when Chrome starts:
+
+1. Open Chrome and go to `chrome://settings/`
+2. In the left sidebar, click **On startup**
+3. Select **Open a specific page or set of pages**
+4. Click **Add a new page**
+5. Enter `http://localhost:5173`
+6. Click **Add**
+
 ## Architecture Notes
 
 - **Backend** runs as a standalone Node.js process serving the API
