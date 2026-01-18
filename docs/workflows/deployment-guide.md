@@ -38,10 +38,11 @@ bash scripts/install-production.sh
 ```
 
 The installer will:
-1. Build all packages
+1. Build all packages (with version metadata)
 2. Create `~/.habit-tracker/` directories
 3. Run database migrations
 4. Create and load launchd services
+5. Verify deployed version matches build
 
 ## Data Locations
 
@@ -79,6 +80,22 @@ Expected: `{"status":"ok","timestamp":"..."}`
 ### Check Frontend
 
 Open http://localhost:5173 in your browser.
+
+### Verify Deployed Version
+
+Each build includes version metadata in HTML meta tags. To check the deployed version:
+
+```bash
+curl -s http://localhost:5173 | grep -E "(app-version|build-time)"
+```
+
+Expected output:
+```html
+<meta name="app-version" content="abc1234">
+<meta name="build-time" content="2024-01-18T12:00:00.000Z">
+```
+
+The `app-version` should match the git commit hash that was deployed. You can also view this in browser DevTools under Elements → `<head>`.
 
 ### Check Daemon Logs
 
