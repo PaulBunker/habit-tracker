@@ -1,13 +1,37 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite';
+import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { execSync } from 'child_process';
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
+
+function getGitHash(): string {
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim();
+  } catch {
+    return 'unknown';
+  }
+}
+
+function versionMetaPlugin(): Plugin {
+  const version = getGitHash();
+  const buildTime = new Date().toISOString();
+
+  return {
+    name: 'version-meta',
+    transformIndexHtml(html) {
+      return html.replace(
+        '</head>',
+        `    <meta name="app-version" content="${version}">\n    <meta name="build-time" content="${buildTime}">\n  </head>`
+      );
+    },
+  };
+}
 const VITE_PORT = parseInt(process.env.VITE_PORT || '5173', 10);
 const BACKEND_PORT = process.env.PORT || '3000';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), versionMetaPlugin()],
   test: {
     globals: true,
     environment: 'jsdom',
