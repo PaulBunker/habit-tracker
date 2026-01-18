@@ -10,6 +10,8 @@ import {
   steadyDeclineData,
   identicalValuesData,
   weightLossJourneyData,
+  largeRangeData,
+  plateauData,
 } from '../test/fixtures/graphData';
 
 // Mock the API client
@@ -186,6 +188,53 @@ describe('GraphView', () => {
         circles?.forEach((circle) => {
           const cy = parseFloat(circle.getAttribute('cy') || 'NaN');
           expect(Number.isNaN(cy)).toBe(false);
+          expect(Number.isFinite(cy)).toBe(true);
+        });
+      });
+    });
+
+    it('handles large value ranges with proper scaling', async () => {
+      vi.mocked(habitsApi.getGraph).mockResolvedValue({
+        success: true,
+        data: { unit: 'lbs', points: largeRangeData },
+      });
+
+      render(<GraphView habit={mockHabit} onClose={mockOnClose} />);
+
+      await waitFor(() => {
+        const svg = document.querySelector('svg');
+        const circles = svg?.querySelectorAll('circle');
+
+        // Should have 3 points
+        expect(circles?.length).toBe(3);
+
+        // All points should be within chart bounds
+        circles?.forEach((circle) => {
+          const cy = parseFloat(circle.getAttribute('cy') || '0');
+          expect(cy).toBeGreaterThanOrEqual(0);
+          expect(cy).toBeLessThanOrEqual(200); // chartHeight
+        });
+      });
+    });
+
+    it('handles plateau data with minimal variation', async () => {
+      vi.mocked(habitsApi.getGraph).mockResolvedValue({
+        success: true,
+        data: { unit: 'lbs', points: plateauData },
+      });
+
+      render(<GraphView habit={mockHabit} onClose={mockOnClose} />);
+
+      await waitFor(() => {
+        const svg = document.querySelector('svg');
+        const circles = svg?.querySelectorAll('circle');
+
+        // Should render all 7 points
+        expect(circles?.length).toBe(7);
+
+        // All Y positions should be valid numbers
+        circles?.forEach((circle) => {
+          const cy = parseFloat(circle.getAttribute('cy') || 'NaN');
           expect(Number.isFinite(cy)).toBe(true);
         });
       });
