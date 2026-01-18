@@ -182,7 +182,27 @@ This document tracks feature requests, enhancements, and the product roadmap for
 - New tabs show habits
 - Blocked site → user opens new tab → sees what habits need completing
 
-#### 8. Dev Mode Visual Indicator 🔵
+#### 8. Emergency Hosts Reset Button 🟢
+**Priority**: High
+**Effort**: Low
+**Description**: Discreet button on main page to manually reset the hosts file as an escape hatch for bugs
+
+**Problem**: When bugs occur in the blocking logic, users can get stuck with blocked websites and no way to unblock them without manual intervention.
+
+**Requirements**:
+- Discreet button in footer (next to "Global Settings" link)
+- Confirmation dialog to prevent accidental clicks
+- Calls daemon to clear all blocked domains from `/etc/hosts`
+- Visual feedback (loading state, success/error message)
+- Works gracefully if daemon isn't running
+
+**Implementation**:
+- Daemon: Add `'reset'` command to socket server that calls `updateHostsFile([])`
+- Shared: Add `resetHosts()` function to `daemon-client.ts`
+- Backend: Add `POST /api/daemon/reset` endpoint
+- Frontend: Add `statusApi.resetHosts()` and button in `App.tsx` footer
+
+#### 9. Dev Mode Visual Indicator 🔵
 **Priority**: Low
 **Effort**: Very Low
 **Description**: Show visual indicator when running in development/sandbox mode
@@ -572,5 +592,5 @@ Low Impact, High Effort → Reconsider
 
 ---
 
-**Last Updated**: 2026-01-18
+**Last Updated**: 2026-01-18 (Added Emergency Hosts Reset Button)
 **Next Review**: Q2 2026
