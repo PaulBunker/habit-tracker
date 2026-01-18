@@ -14,6 +14,7 @@ router.get('/status', async (_req: Request, res: Response, next: NextFunction) =
       data: {
         isRunning,
         lastCheck: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
       },
     });
   } catch (error) {

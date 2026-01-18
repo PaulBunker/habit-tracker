@@ -21,6 +21,7 @@
     "prepare": "husky install",
     "daemon:status": "bash scripts/daemon-status.sh",
     "daemon:restore": "bash scripts/restore-hosts.sh",
+    "db:cleanup-test-data": "bash scripts/cleanup-test-data.sh",
     "install:production": "bash scripts/install-production.sh",
     "uninstall:production": "bash scripts/uninstall-production.sh"
   },

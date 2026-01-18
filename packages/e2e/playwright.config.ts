@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
+  globalSetup: './global-setup.ts',
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -8,7 +9,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:5174',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -29,7 +30,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev',
     cwd: '../..',
-    port: 5173,
+    port: 5174,
     reuseExistingServer: !process.env.CI,
   },
 });

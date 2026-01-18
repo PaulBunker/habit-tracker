@@ -29,6 +29,7 @@ describe('Status API', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.isRunning).toBe(true);
       expect(response.body.data.lastCheck).toBeDefined();
+      expect(response.body.data.environment).toBeDefined();
     });
 
     it('should return not running status when daemon is unreachable', async () => {
