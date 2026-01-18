@@ -52,7 +52,7 @@ npm run daemon:restore
 
 **Data Flow**: User → Frontend → Backend API → SQLite ← Daemon → /etc/hosts
 
-**V2 Blocking Logic**: All configured websites are blocked when ANY timed habit's start time passes. Blocking continues until ALL timed habits are completed/skipped.
+**Blocking Logic**: Websites are blocked when ANY habit with a deadline becomes overdue (current time >= deadline). Blocking continues until ALL overdue habits are completed/skipped. Habits without deadlines are simple checklist items that never trigger blocking.
 
 ## Key Files
 

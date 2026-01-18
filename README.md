@@ -5,8 +5,8 @@ A habit tracking webapp that blocks specified websites when habits aren't comple
 ## Features
 
 ### Core Functionality
-- Create daily habits with optional start times and deadlines
-- Global website blocking (all configured sites blocked until habits complete)
+- Create daily habits with optional deadlines
+- Global website blocking (sites blocked when habits are overdue)
 - Complete or skip habits with reasons
 - Calendar view for tracking history
 - Graph view for data visualization
@@ -151,18 +151,18 @@ npm run test:bdd
 
 ## How It Works
 
-1. **Create Habits**: Define daily habits with optional start times and deadlines
+1. **Create Habits**: Define daily habits with optional deadlines
 2. **Configure Blocking**: Set global list of websites to block in Settings
-3. **Daemon Monitoring**: Background service checks habit status every minute
-4. **Automatic Blocking**: When start time passes, all configured sites are blocked
-5. **Complete Habits**: Check off habits to unblock (all must be complete)
+3. **Daemon Monitoring**: Background service checks habit status every 30 seconds
+4. **Automatic Blocking**: When a deadline passes, all configured sites are blocked
+5. **Complete Habits**: Check off habits to unblock (all overdue habits must be complete)
 6. **Data Tracking**: Optionally track values like time spent or quantity
 
-### V2 Blocking Logic
+### Blocking Logic
 
-- Websites are blocked when ANY timed habit's start time passes
-- Blocking continues until ALL timed habits are completed/skipped
-- At deadline, habits are marked as "missed" (still blocking)
+- Habits without deadlines are simple checklist items (never trigger blocking)
+- Habits with deadlines trigger blocking when overdue (current time >= deadline)
+- Blocking continues until ALL overdue habits are completed/skipped
 - At midnight, new day starts fresh
 
 ## Database Schema
@@ -171,8 +171,7 @@ npm run test:bdd
 - `id`: UUID primary key
 - `name`: Habit name
 - `description`: Optional description
-- `startTimeUtc`: When blocking starts (HH:MM)
-- `deadlineUtc`: When marked as missed (HH:MM)
+- `deadlineUtc`: When habit is due (HH:MM) - blocking starts when overdue
 - `timezoneOffset`: User's timezone offset
 - `dataTracking`: Boolean for value tracking
 - `dataUnit`: Unit for tracked values (e.g., "minutes")
