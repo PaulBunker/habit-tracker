@@ -10,11 +10,14 @@ dist
 build
 .next
 out
+*.tsbuildinfo
 
 # Testing
 coverage
 .nyc_output
 *.lcov
+playwright-report/
+test-results/
 
 # Environment variables
 .env
@@ -29,14 +32,20 @@ coverage
 *~
 .DS_Store
 
+# Claude Code
+.claude/settings.local.json
+
 # Logs
 logs
 *.log
 
 # Database
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
+packages/backend/data/
 
 # Daemon
 .habit-tracker/
