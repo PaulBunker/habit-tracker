@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { notifyDaemon, pingDaemon } from '../lib/daemon-client';
+import { notifyDaemon, pingDaemon } from '@habit-tracker/shared/daemon-client';
 
 const router = Router();
 

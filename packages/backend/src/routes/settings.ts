@@ -4,7 +4,7 @@ import { settings } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { AppError } from '../middleware/error-handler';
-import { notifyDaemon } from '../lib/daemon-client';
+import { notifyDaemon } from '@habit-tracker/shared/daemon-client';
 
 const router = Router();
 

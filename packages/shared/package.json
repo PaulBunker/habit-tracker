@@ -6,6 +6,11 @@
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "daemon-client": ["./dist/esm/daemon-client.d.ts"]
+    }
+  },
   "exports": {
     ".": {
       "import": {
@@ -15,6 +20,18 @@
       "require": {
         "types": "./dist/cjs/index.d.ts",
         "default": "./dist/cjs/index.js"
+      }
+    },
+    "./daemon-client": {
+      "node": {
+        "import": {
+          "types": "./dist/esm/daemon-client.d.ts",
+          "default": "./dist/esm/daemon-client.js"
+        },
+        "require": {
+          "types": "./dist/cjs/daemon-client.d.ts",
+          "default": "./dist/cjs/daemon-client.js"
+        }
       }
     }
   },

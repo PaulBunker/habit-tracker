@@ -59,6 +59,7 @@ npm run daemon:restore
 | Location | Purpose |
 |----------|---------|
 | `packages/shared/src/types.ts` | All TypeScript interfaces (Habit, HabitLog, AppSettings) |
+| `packages/shared/src/daemon-client.ts` | IPC client for daemon (Node.js only, import via `@habit-tracker/shared/daemon-client`) |
 | `packages/backend/src/db/schema.ts` | Drizzle ORM schema |
 | `packages/backend/src/server.ts` | Express app setup |
 | `packages/daemon/src/hosts-manager.ts` | /etc/hosts manipulation |

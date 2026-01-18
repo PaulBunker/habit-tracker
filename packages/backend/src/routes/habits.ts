@@ -4,7 +4,7 @@ import { db } from '../db';
 import { habits, habitLogs } from '../db/schema';
 import { eq, and, desc, gte, lte } from 'drizzle-orm';
 import { localTimeToUtc, utcTimeToLocal, getCurrentDateUtc } from '@habit-tracker/shared';
-import { notifyDaemon } from '../lib/daemon-client';
+import { notifyDaemon } from '@habit-tracker/shared/daemon-client';
 import { z } from 'zod';
 import { AppError } from '../middleware/error-handler';
 
