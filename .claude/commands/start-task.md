@@ -39,7 +39,14 @@ Begin working on a specific GitHub Issue.
    - List files to modify
    - Ask for confirmation to proceed
 
-6. **If issue needs clarification**:
+6. **Write tests first (TDD)**:
+   - Write failing tests for each component/layer before implementing
+   - Test files should cover the acceptance criteria from the issue
+   - Run tests to confirm they fail (red phase)
+   - Then implement code to make tests pass (green phase)
+   - Refactor if needed while keeping tests green
+
+7. **If issue needs clarification**:
    - List specific questions
    - Add comment to issue with questions:
      ```bash
@@ -55,3 +62,5 @@ Begin working on a specific GitHub Issue.
 - Always read the full issue before starting
 - Check for linked issues or PRs that provide context
 - If the issue is too large, suggest using `/breakdown-task` instead
+- **TDD is mandatory**: Write tests before implementation, not after
+- Tests should map to acceptance criteria in the issue
