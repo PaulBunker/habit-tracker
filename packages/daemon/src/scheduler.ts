@@ -111,6 +111,56 @@ async function getBlockedWebsites(): Promise<string[]> {
  * - Habits without deadlines never trigger blocking
  * - At midnight (new day), unblock and start fresh
  */
+/**
+ * Calculate milliseconds until the next habit deadline
+ * Returns null if no upcoming deadlines today
+ */
+export async function getNextDeadlineMs(): Promise<number | null> {
+  const now = new Date();
+  const currentTimeUtc = getCurrentTimeUtc();
+
+  // Get all active habits with deadlines
+  const activeHabits = await db.select().from(habits).where(eq(habits.isActive, true));
+
+  let soonestMs: number | null = null;
+
+  for (const habit of activeHabits) {
+    // Skip habits without deadlines or not active today
+    if (!hasDeadline(habit) || !isHabitActiveToday(habit)) {
+      continue;
+    }
+
+    const deadlineUtc = habit.deadlineUtc!;
+
+    // Skip if deadline has already passed today
+    if (currentTimeUtc >= deadlineUtc) {
+      continue;
+    }
+
+    // Calculate ms until this deadline
+    const [deadlineHours, deadlineMinutes] = deadlineUtc.split(':').map(Number);
+    const deadlineDate = new Date(now);
+    deadlineDate.setUTCHours(deadlineHours, deadlineMinutes, 0, 0);
+
+    const msUntilDeadline = deadlineDate.getTime() - now.getTime();
+
+    if (msUntilDeadline > 0 && (soonestMs === null || msUntilDeadline < soonestMs)) {
+      soonestMs = msUntilDeadline;
+    }
+  }
+
+  return soonestMs;
+}
+
+/**
+ * Check all habits and determine which domains should be blocked
+ *
+ * Blocking Logic:
+ * - Block websites when ANY habit with a deadline is overdue (past deadline)
+ * - Stay blocked until ALL overdue habits are completed/skipped
+ * - Habits without deadlines never trigger blocking
+ * - At midnight (new day), unblock and start fresh
+ */
 export async function checkHabits(): Promise<HabitCheckResult> {
   const currentTime = getCurrentTimeUtc();
   const currentDate = getCurrentDateUtc();
