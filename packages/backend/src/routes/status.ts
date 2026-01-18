@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { notifyDaemon, pingDaemon } from '@habit-tracker/shared/daemon-client';
+import { notifyDaemon, pingDaemon, resetHosts } from '@habit-tracker/shared/daemon-client';
 
 const router = Router();
 
@@ -30,6 +30,21 @@ router.post('/daemon/sync', async (_req: Request, res: Response, next: NextFunct
     res.json({
       success,
       message: success ? 'Daemon refresh triggered' : 'Daemon not reachable',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/daemon/reset - Emergency reset of blocked hosts
+ */
+router.post('/daemon/reset', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const success = await resetHosts();
+    res.json({
+      success,
+      message: success ? 'Hosts file reset successfully' : 'Daemon not reachable or reset failed',
     });
   } catch (error) {
     next(error);

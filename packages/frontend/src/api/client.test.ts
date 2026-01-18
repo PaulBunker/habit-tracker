@@ -214,5 +214,19 @@ describe('API Client', () => {
         headers: { 'Content-Type': 'application/json' },
       });
     });
+
+    it('resetHosts posts reset request', async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        json: () => Promise.resolve({ success: true, message: 'Hosts file reset successfully' }),
+      } as Response);
+
+      const result = await statusApi.resetHosts();
+
+      expect(global.fetch).toHaveBeenCalledWith('/api/daemon/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      expect(result.success).toBe(true);
+    });
   });
 });

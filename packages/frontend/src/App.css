@@ -338,7 +338,9 @@
   margin-top: 2rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .settings-link {
@@ -353,6 +355,50 @@
 
 .settings-link:hover {
   color: var(--primary-color);
+}
+
+/* Emergency Reset Button */
+.emergency-reset {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.emergency-reset-button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.emergency-reset-button:hover:not(:disabled) {
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+}
+
+.emergency-reset-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.emergency-reset-message {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.emergency-reset-message.success {
+  color: var(--success-color);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.emergency-reset-message.error {
+  color: var(--danger-color);
+  background: rgba(239, 68, 68, 0.1);
 }
 
 /* Modal */

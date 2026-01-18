@@ -128,4 +128,10 @@ export const statusApi = {
       method: 'POST',
     });
   },
+
+  async resetHosts(): Promise<ApiResponse<{ message: string }>> {
+    return fetchApi<{ message: string }>('/daemon/reset', {
+      method: 'POST',
+    });
+  },
 };

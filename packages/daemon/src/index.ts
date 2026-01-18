@@ -63,7 +63,13 @@ async function run(): Promise<void> {
   cleanupOldBackups();
 
   // Start socket server for IPC
-  socketServer = startSocketServer(checkAndUpdate);
+  socketServer = startSocketServer({
+    onRefresh: checkAndUpdate,
+    onReset: async () => {
+      log('Emergency reset triggered - clearing all blocked hosts');
+      updateHostsFile([]);
+    },
+  });
 
   // Fallback polling loop (for time-based triggers like deadlines)
   setInterval(async () => {

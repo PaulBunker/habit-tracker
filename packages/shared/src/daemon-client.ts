@@ -51,3 +51,29 @@ export async function pingDaemon(): Promise<boolean> {
     });
   });
 }
+
+export async function resetHosts(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = net.createConnection(SOCKET_PATH, () => {
+      socket.write('reset\n');
+    });
+
+    socket.setTimeout(TIMEOUT_MS);
+
+    socket.on('data', (data) => {
+      const response = data.toString().trim();
+      socket.end();
+      resolve(response === 'ok');
+    });
+
+    socket.on('error', () => {
+      // Daemon not running or socket unavailable - fail silently
+      resolve(false);
+    });
+
+    socket.on('timeout', () => {
+      socket.destroy();
+      resolve(false);
+    });
+  });
+}
