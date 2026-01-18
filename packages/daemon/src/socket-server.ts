@@ -4,12 +4,20 @@ import os from 'os';
 import fs from 'fs';
 import { log } from './hosts-manager';
 
-const SOCKET_PATH = path.join(os.homedir(), '.habit-tracker', 'daemon.sock');
+const DEFAULT_SOCKET_PATH = path.join(os.homedir(), '.habit-tracker', 'daemon.sock');
 
-export function startSocketServer(onRefresh: () => Promise<void>): net.Server {
+export interface SocketServerOptions {
+  onRefresh: () => Promise<void>;
+  onReset: () => Promise<void>;
+  socketPath?: string; // For testing
+}
+
+export function startSocketServer(options: SocketServerOptions): net.Server {
+  const { onRefresh, onReset, socketPath = DEFAULT_SOCKET_PATH } = options;
+
   // Clean up stale socket file if exists
-  if (fs.existsSync(SOCKET_PATH)) {
-    fs.unlinkSync(SOCKET_PATH);
+  if (fs.existsSync(socketPath)) {
+    fs.unlinkSync(socketPath);
   }
 
   const server = net.createServer((socket) => {
@@ -20,6 +28,15 @@ export function startSocketServer(onRefresh: () => Promise<void>): net.Server {
         log('Received refresh signal via socket');
         await onRefresh();
         socket.write('ok\n');
+      } else if (message === 'reset') {
+        log('Received reset signal via socket');
+        try {
+          await onReset();
+          socket.write('ok\n');
+        } catch (error) {
+          log(`Reset failed: ${error}`, 'error');
+          socket.write('error: reset failed\n');
+        }
       } else if (message === 'ping') {
         socket.write('pong\n');
       } else {
@@ -33,20 +50,20 @@ export function startSocketServer(onRefresh: () => Promise<void>): net.Server {
     });
   });
 
-  server.listen(SOCKET_PATH, () => {
-    log(`Socket server listening on ${SOCKET_PATH}`);
+  server.listen(socketPath, () => {
+    log(`Socket server listening on ${socketPath}`);
     // Set permissions so backend can connect
-    fs.chmodSync(SOCKET_PATH, 0o660);
+    fs.chmodSync(socketPath, 0o660);
   });
 
   return server;
 }
 
-export function stopSocketServer(server: net.Server): Promise<void> {
+export function stopSocketServer(server: net.Server, socketPath = DEFAULT_SOCKET_PATH): Promise<void> {
   return new Promise((resolve) => {
     server.close(() => {
-      if (fs.existsSync(SOCKET_PATH)) {
-        fs.unlinkSync(SOCKET_PATH);
+      if (fs.existsSync(socketPath)) {
+        fs.unlinkSync(socketPath);
       }
       resolve();
     });

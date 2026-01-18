@@ -4,6 +4,7 @@ import type { Habit } from '@habit-tracker/shared';
 import { QuickAddHabit } from './components/QuickAddHabit';
 import { DailyChecklist } from './components/DailyChecklist';
 import { HabitSettingsPanel } from './components/HabitSettingsPanel';
+import { EmergencyResetButton } from './components/EmergencyResetButton';
 import { GlobalSettings } from './pages/GlobalSettings';
 import { useHabits } from './hooks/useHabits';
 import { useTodayLogs } from './hooks/useTodayLogs';
@@ -87,6 +88,7 @@ function HomePage() {
       </main>
 
       <footer className="app-footer">
+        <EmergencyResetButton />
         <Link to="/settings" className="settings-link">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path

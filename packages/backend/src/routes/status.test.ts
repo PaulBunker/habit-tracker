@@ -5,12 +5,14 @@ import app from '../server';
 jest.mock('@habit-tracker/shared/daemon-client', () => ({
   pingDaemon: jest.fn(),
   notifyDaemon: jest.fn(),
+  resetHosts: jest.fn(),
 }));
 
-import { pingDaemon, notifyDaemon } from '@habit-tracker/shared/daemon-client';
+import { pingDaemon, notifyDaemon, resetHosts } from '@habit-tracker/shared/daemon-client';
 
 const mockPingDaemon = pingDaemon as jest.MockedFunction<typeof pingDaemon>;
 const mockNotifyDaemon = notifyDaemon as jest.MockedFunction<typeof notifyDaemon>;
+const mockResetHosts = resetHosts as jest.MockedFunction<typeof resetHosts>;
 
 describe('Status API', () => {
   beforeEach(() => {
@@ -73,6 +75,36 @@ describe('Status API', () => {
       mockNotifyDaemon.mockRejectedValue(new Error('Connection refused'));
 
       const response = await request(app).post('/api/daemon/sync');
+
+      expect(response.status).toBe(500);
+    });
+  });
+
+  describe('POST /api/daemon/reset', () => {
+    it('should return success when reset succeeds', async () => {
+      mockResetHosts.mockResolvedValue(true);
+
+      const response = await request(app).post('/api/daemon/reset');
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Hosts file reset successfully');
+    });
+
+    it('should return failure when daemon is not reachable', async () => {
+      mockResetHosts.mockResolvedValue(false);
+
+      const response = await request(app).post('/api/daemon/reset');
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Daemon not reachable or reset failed');
+    });
+
+    it('should handle daemon reset errors', async () => {
+      mockResetHosts.mockRejectedValue(new Error('Connection refused'));
+
+      const response = await request(app).post('/api/daemon/reset');
 
       expect(response.status).toBe(500);
     });
