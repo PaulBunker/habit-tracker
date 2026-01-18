@@ -482,10 +482,9 @@ After successful setup:
 
 4. **Try creating a habit:**
    - Open http://localhost:5173
-   - Click "Create New Habit"
-   - Fill in the form
-   - Add blocked websites
-   - Save and check it in
+   - Type a habit name in the quick-add input and click +
+   - Click the checkbox to complete it
+   - Click the settings cog to configure deadline, blocked websites, etc.
 
 5. **Monitor the daemon:**
    ```bash
