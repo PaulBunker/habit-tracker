@@ -1,13 +1,17 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const VITE_PORT = parseInt(process.env.VITE_PORT || '5173', 10);
+const BACKEND_PORT = process.env.PORT || '3000';
+
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5173,
+    port: VITE_PORT,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: `http://localhost:${BACKEND_PORT}`,
         changeOrigin: true,
       },
     },
@@ -19,5 +23,8 @@ export default defineConfig({
   resolve: {
     // Explicitly prefer ESM exports
     conditions: ['import', 'module', 'browser', 'default'],
+  },
+  define: {
+    'import.meta.env.MODE': JSON.stringify(NODE_ENV),
   },
 });

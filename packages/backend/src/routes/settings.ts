@@ -4,6 +4,7 @@ import { settings } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { AppError } from '../middleware/error-handler';
+import { notifyDaemon } from '../lib/daemon-client';
 
 const router = Router();
 
@@ -81,6 +82,9 @@ router.put('/', async (req: Request, res: Response, next: NextFunction) => {
     };
 
     res.json({ success: true, data });
+
+    // Fire-and-forget notification to daemon
+    notifyDaemon().catch(() => {});
   } catch (error) {
     next(error);
   }
@@ -102,6 +106,9 @@ router.post('/blocked-websites', async (req: Request, res: Response, next: NextF
     }
 
     res.json({ success: true, data: { blockedWebsites } });
+
+    // Fire-and-forget notification to daemon
+    notifyDaemon().catch(() => {});
   } catch (error) {
     next(error);
   }
@@ -126,6 +133,9 @@ router.delete('/blocked-websites', async (req: Request, res: Response, next: Nex
     await setSetting('blockedWebsites', JSON.stringify(blockedWebsites));
 
     res.json({ success: true, data: { blockedWebsites } });
+
+    // Fire-and-forget notification to daemon
+    notifyDaemon().catch(() => {});
   } catch (error) {
     next(error);
   }

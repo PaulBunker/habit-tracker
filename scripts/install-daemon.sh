@@ -16,6 +16,7 @@ cd ../..
 
 # Get absolute path to daemon
 DAEMON_PATH=$(pwd)/packages/daemon/dist/index.js
+NODE_PATH=$(which node)
 
 # Create launchd plist
 PLIST_PATH="$HOME_DIR/Library/LaunchAgents/com.habit-tracker.daemon.plist"
@@ -31,7 +32,7 @@ cat > "$PLIST_PATH" << EOF
     <string>com.habit-tracker.daemon</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/bin/node</string>
+        <string>$NODE_PATH</string>
         <string>$DAEMON_PATH</string>
     </array>
     <key>RunAtLoad</key>

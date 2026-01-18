@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { notifyDaemon, pingDaemon } from '../lib/daemon-client';
 
 const router = Router();
 
@@ -7,14 +8,12 @@ const router = Router();
  */
 router.get('/status', async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    // In a real implementation, this would query the daemon or check a shared state
-    // For now, return a placeholder
+    const isRunning = await pingDaemon();
     res.json({
       success: true,
       data: {
-        isRunning: true,
+        isRunning,
         lastCheck: new Date().toISOString(),
-        blockedDomains: [],
       },
     });
   } catch (error) {
@@ -27,11 +26,10 @@ router.get('/status', async (_req: Request, res: Response, next: NextFunction) =
  */
 router.post('/daemon/sync', async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    // In a real implementation, this would trigger the daemon to check and update
-    // For now, return a placeholder
+    const success = await notifyDaemon();
     res.json({
-      success: true,
-      message: 'Sync triggered successfully',
+      success,
+      message: success ? 'Daemon refresh triggered' : 'Daemon not reachable',
     });
   } catch (error) {
     next(error);

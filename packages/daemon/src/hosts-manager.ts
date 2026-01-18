@@ -102,14 +102,17 @@ export function getBlockedDomains(): string[] {
 
 /**
  * Update hosts file with blocked domains
+ * Uses sudo to write to /etc/hosts since it requires root permissions
  */
 export function updateHostsFile(domainsToBlock: string[]): void {
+  const { execSync } = require('child_process');
+
   try {
     // Create backup first
-    const backupPath = createBackup();
+    createBackup();
 
     // Read current hosts file
-    let content = readHostsFile();
+    const content = readHostsFile();
     const lines = content.split('\n');
 
     // Remove existing habit-tracker section
@@ -134,14 +137,24 @@ export function updateHostsFile(domainsToBlock: string[]): void {
       filteredLines.push('');
       filteredLines.push(HABIT_TRACKER_MARKER);
       domainsToBlock.forEach((domain) => {
+        // Block the domain and www. variant
         filteredLines.push(`127.0.0.1 ${domain}`);
+        if (!domain.startsWith('www.')) {
+          filteredLines.push(`127.0.0.1 www.${domain}`);
+        }
       });
       filteredLines.push(HABIT_TRACKER_END);
     }
 
-    // Write updated content
+    // Write updated content using sudo cp
     const newContent = filteredLines.join('\n');
-    fs.writeFileSync(HOSTS_FILE_PATH, newContent);
+    // Use /tmp directly (not os.tmpdir()) to match sudoers entry
+    const tempFile = '/tmp/habit-tracker-hosts-temp';
+    fs.writeFileSync(tempFile, newContent);
+
+    // Use sudo to copy the temp file to /etc/hosts
+    execSync(`sudo cp "${tempFile}" "${HOSTS_FILE_PATH}"`, { stdio: 'inherit' });
+    fs.unlinkSync(tempFile);
 
     log(
       `Hosts file updated. Blocking ${domainsToBlock.length} domains: ${domainsToBlock.join(', ')}`
@@ -157,11 +170,13 @@ export function updateHostsFile(domainsToBlock: string[]): void {
 
 /**
  * Restore hosts file from backup
+ * Uses sudo to write to /etc/hosts since it requires root permissions
  */
 export function restoreFromBackup(backupPath: string): void {
+  const { execSync } = require('child_process');
+
   try {
-    const backupContent = fs.readFileSync(backupPath, 'utf-8');
-    fs.writeFileSync(HOSTS_FILE_PATH, backupContent);
+    execSync(`sudo cp "${backupPath}" "${HOSTS_FILE_PATH}"`, { stdio: 'inherit' });
     log(`Hosts file restored from backup: ${backupPath}`);
     flushDnsCache();
   } catch (error) {
@@ -185,6 +200,8 @@ function flushDnsCache(): void {
 
 /**
  * Log message to file
+ * Note: We only write to the log file, not console, because launchd
+ * redirects stdout to the same log file which would cause duplicates.
  */
 export function log(message: string, level: 'info' | 'error' = 'info'): void {
   const timestamp = new Date().toISOString();
@@ -193,12 +210,9 @@ export function log(message: string, level: 'info' | 'error' = 'info'): void {
 
   try {
     fs.appendFileSync(logPath, logMessage);
-    if (level === 'error') {
-      console.error(logMessage);
-    } else {
-      console.log(logMessage);
-    }
   } catch (error) {
+    // Fallback to console if file write fails
     console.error(`Error writing to log file: ${error}`);
+    console.error(logMessage);
   }
 }

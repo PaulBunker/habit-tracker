@@ -7,7 +7,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev -w @habit-tracker/backend\" \"npm run dev -w @habit-tracker/frontend\" \"npm run dev -w @habit-tracker/daemon\"",
+    "dev": "npm run dev:sandbox",
+    "dev:sandbox": "dotenv -e .env.development -- concurrently \"npm run dev -w @habit-tracker/backend\" \"npm run dev -w @habit-tracker/frontend\" \"npm run dev -w @habit-tracker/daemon\"",
+    "start:prod": "dotenv -e .env.production -- concurrently \"npm run start -w @habit-tracker/backend\" \"npm run dev -w @habit-tracker/frontend\" \"npm run start -w @habit-tracker/daemon\"",
     "build": "npm run build -w @habit-tracker/shared && npm run build -w @habit-tracker/backend && npm run build -w @habit-tracker/daemon && npm run build -w @habit-tracker/frontend",
     "test": "npm run test --workspaces --if-present",
     "test:unit": "npm run test:unit --workspaces --if-present",
@@ -16,11 +18,16 @@
     "lint": "npm run lint --workspaces --if-present",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "daemon:status": "bash scripts/daemon-status.sh",
+    "daemon:restore": "bash scripts/restore-hosts.sh",
+    "install:production": "bash scripts/install-production.sh",
+    "uninstall:production": "bash scripts/uninstall-production.sh"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
     "concurrently": "^8.2.2",
+    "dotenv-cli": "^7.3.0",
     "husky": "^8.0.3",
     "lint-staged": "^15.2.0",
     "prettier": "^3.2.4",

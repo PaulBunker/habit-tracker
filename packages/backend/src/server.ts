@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/error-handler';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Middleware
 app.use(cors());
@@ -28,7 +29,8 @@ app.use(errorHandler);
 // Start server
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`[${NODE_ENV.toUpperCase()}] Server running on http://localhost:${PORT}`);
+    console.log(`Database path: ${process.env.DB_PATH || 'default'}`);
   });
 }
 

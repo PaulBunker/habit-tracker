@@ -4,6 +4,7 @@ import { db } from '../db';
 import { habits, habitLogs } from '../db/schema';
 import { eq, and, desc, gte, lte } from 'drizzle-orm';
 import { localTimeToUtc, utcTimeToLocal, getCurrentDateUtc } from '@habit-tracker/shared';
+import { notifyDaemon } from '../lib/daemon-client';
 import { z } from 'zod';
 import { AppError } from '../middleware/error-handler';
 
@@ -119,6 +120,9 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     await db.insert(habits).values(newHabit);
 
     res.status(201).json({ success: true, data: formatHabitResponse(newHabit as any) });
+
+    // Fire-and-forget notification to daemon
+    notifyDaemon().catch(() => {});
   } catch (error) {
     next(error);
   }
@@ -167,6 +171,9 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     const [updatedHabit] = await db.select().from(habits).where(eq(habits.id, req.params.id));
 
     res.json({ success: true, data: formatHabitResponse(updatedHabit) });
+
+    // Fire-and-forget notification to daemon
+    notifyDaemon().catch(() => {});
   } catch (error) {
     next(error);
   }
@@ -186,6 +193,9 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
     await db.delete(habits).where(eq(habits.id, req.params.id));
 
     res.json({ success: true, message: 'Habit deleted successfully' });
+
+    // Fire-and-forget notification to daemon
+    notifyDaemon().catch(() => {});
   } catch (error) {
     next(error);
   }
@@ -237,6 +247,9 @@ router.post('/:id/complete', async (req: Request, res: Response, next: NextFunct
     }
 
     res.json({ success: true, data: logData });
+
+    // Fire-and-forget notification to daemon
+    notifyDaemon().catch(() => {});
   } catch (error) {
     next(error);
   }
@@ -281,6 +294,9 @@ router.post('/:id/skip', async (req: Request, res: Response, next: NextFunction)
     }
 
     res.json({ success: true, data: logData });
+
+    // Fire-and-forget notification to daemon
+    notifyDaemon().catch(() => {});
   } catch (error) {
     next(error);
   }
