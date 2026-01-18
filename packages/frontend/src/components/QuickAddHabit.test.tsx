@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QuickAddHabit } from './QuickAddHabit';
@@ -44,7 +44,7 @@ describe('QuickAddHabit', () => {
   });
 
   it('submits habit and calls onSuccess', async () => {
-    vi.mocked(habitsApi.create).mockResolvedValue({ success: true, data: { id: '1', name: 'New habit' } });
+    vi.mocked(habitsApi.create).mockResolvedValue({ success: true, data: { id: '1', name: 'New habit', timezoneOffset: 0, dataTracking: false, createdAt: '2024-01-01', isActive: true } });
 
     render(<QuickAddHabit onSuccess={mockOnSuccess} />);
 
@@ -63,7 +63,7 @@ describe('QuickAddHabit', () => {
   });
 
   it('clears input after successful submission', async () => {
-    vi.mocked(habitsApi.create).mockResolvedValue({ success: true, data: { id: '1', name: 'New habit' } });
+    vi.mocked(habitsApi.create).mockResolvedValue({ success: true, data: { id: '1', name: 'New habit', timezoneOffset: 0, dataTracking: false, createdAt: '2024-01-01', isActive: true } });
 
     render(<QuickAddHabit onSuccess={mockOnSuccess} />);
 
@@ -91,7 +91,7 @@ describe('QuickAddHabit', () => {
   });
 
   it('trims whitespace from habit name', async () => {
-    vi.mocked(habitsApi.create).mockResolvedValue({ success: true, data: { id: '1', name: 'New habit' } });
+    vi.mocked(habitsApi.create).mockResolvedValue({ success: true, data: { id: '1', name: 'New habit', timezoneOffset: 0, dataTracking: false, createdAt: '2024-01-01', isActive: true } });
 
     render(<QuickAddHabit onSuccess={mockOnSuccess} />);
 

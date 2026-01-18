@@ -16,12 +16,12 @@ import { habitsApi } from '../api/client';
 const mockHabit: Habit = {
   id: '1',
   name: 'Test Habit',
-  description: null,
-  deadlineUtc: null,
+  description: undefined,
+  deadlineUtc: undefined,
   deadlineLocal: undefined,
   timezoneOffset: 0,
   dataTracking: false,
-  dataUnit: null,
+  dataUnit: undefined,
   activeDays: undefined,
   createdAt: '2024-01-01',
   isActive: true,
@@ -44,9 +44,9 @@ const mockCompletedLog: HabitLog = {
   date: '2024-01-01',
   status: 'completed',
   completedAt: '2024-01-01T10:00:00Z',
-  dataValue: null,
-  skipReason: null,
-  notes: null,
+  dataValue: undefined,
+  skipReason: undefined,
+  notes: undefined,
   createdAt: '2024-01-01',
 };
 
