@@ -5,8 +5,41 @@ import { eq, and } from 'drizzle-orm';
 import { getCurrentTimeUtc, getCurrentDateUtc } from '@habit-tracker/shared';
 import { randomUUID } from 'crypto';
 import path from 'path';
+import os from 'os';
 
-const dbPath = process.env.DB_PATH || path.join(__dirname, '../../backend/data/habit-tracker.db');
+/**
+ * Expand ~ to user's home directory
+ */
+function expandHome(filePath: string): string {
+  if (filePath.startsWith('~')) {
+    return path.join(os.homedir(), filePath.slice(1));
+  }
+  return filePath;
+}
+
+/**
+ * Resolve path relative to monorepo root (INIT_CWD) for relative paths
+ */
+function resolveDbPath(rawPath: string): string {
+  // Expand home directory
+  const expanded = expandHome(rawPath);
+  // If it's a relative path and INIT_CWD is set (npm workspace), resolve from monorepo root
+  if (!path.isAbsolute(expanded) && process.env.INIT_CWD) {
+    return path.resolve(process.env.INIT_CWD, expanded);
+  }
+  return path.resolve(expanded);
+}
+
+const NODE_ENV = process.env.NODE_ENV || 'development';
+// Production uses ~/.habit-tracker/data, development uses backend's data directory
+const defaultDbPath =
+  NODE_ENV === 'production' ? '~/.habit-tracker/data' : path.join(__dirname, '../../backend/data');
+const rawDbPath = process.env.DB_PATH || defaultDbPath;
+const dbDir = resolveDbPath(rawDbPath);
+const dbPath = path.join(dbDir, 'habit-tracker.db');
+
+console.log(`[DAEMON ${NODE_ENV.toUpperCase()}] Using database: ${dbPath}`);
+
 const sqlite = new Database(dbPath);
 const db = drizzle(sqlite);
 
