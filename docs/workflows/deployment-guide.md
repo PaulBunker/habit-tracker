@@ -231,6 +231,45 @@ kill -9 <PID>
 bash scripts/install-production.sh
 ```
 
+## Chrome Homepage Integration
+
+Setting Chrome to open the Habit Tracker on new tabs creates a powerful workflow: when a blocked website redirects you, opening a new tab immediately shows which habits need completing.
+
+### Manual Setup
+
+1. Open Chrome and go to `chrome://settings/`
+2. In the left sidebar, click **On startup**
+3. Select **Open a specific page or set of pages**
+4. Click **Add a new page**
+5. Enter `http://localhost:5173`
+6. Click **Add**
+
+Alternatively, to set it as your homepage (accessible via the Home button):
+1. Go to `chrome://settings/appearance`
+2. Enable **Show home button**
+3. Select **Enter custom web address**
+4. Enter `http://localhost:5173`
+
+### Automated Setup (macOS)
+
+You can use a Chrome policy to automatically configure the homepage:
+
+```bash
+bash scripts/setup-chrome-homepage.sh
+```
+
+This creates a Chrome managed policy that:
+- Sets the homepage to `http://localhost:5173`
+- Adds it to the pages opened on startup
+- Requires Chrome restart to take effect
+
+To remove the policy:
+```bash
+bash scripts/setup-chrome-homepage.sh --remove
+```
+
+> **Note:** Chrome policies require admin privileges and Chrome must be restarted after changes.
+
 ## Architecture Notes
 
 - **Backend** runs as a standalone Node.js process serving the API
