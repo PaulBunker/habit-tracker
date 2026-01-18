@@ -1,4 +1,4 @@
-import { checkHabits } from './scheduler';
+import { checkHabits, getNextDeadlineMs } from './scheduler';
 import {
   ensureDirectories,
   updateHostsFile,
@@ -9,11 +9,49 @@ import {
 import { startSocketServer, stopSocketServer } from './socket-server';
 import net from 'net';
 
-const CHECK_INTERVAL = 30 * 1000; // 30 seconds (fallback for time-based triggers)
+const CHECK_INTERVAL = 60 * 1000; // 60 seconds (fallback - deadlines use precise timers)
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 let socketServer: net.Server | null = null;
+let deadlineTimer: NodeJS.Timeout | null = null;
+
+/**
+ * Schedule a timer to trigger at the next deadline
+ */
+async function scheduleNextDeadline(): Promise<void> {
+  // Clear any existing deadline timer
+  if (deadlineTimer) {
+    clearTimeout(deadlineTimer);
+    deadlineTimer = null;
+  }
+
+  try {
+    const msUntilDeadline = await getNextDeadlineMs();
+
+    if (msUntilDeadline !== null && msUntilDeadline > 0) {
+      // Add 1 second buffer to ensure we're past the deadline
+      const scheduleMs = msUntilDeadline + 1000;
+      const minutes = Math.floor(scheduleMs / 60000);
+      const seconds = Math.floor((scheduleMs % 60000) / 1000);
+
+      log(`Next deadline in ${minutes}m ${seconds}s - scheduling timer`);
+
+      deadlineTimer = setTimeout(async () => {
+        log('Deadline timer triggered');
+        try {
+          await checkAndUpdate();
+        } catch (error) {
+          log(`Error in deadline timer: ${error}`, 'error');
+        }
+      }, scheduleMs);
+    } else {
+      log('No upcoming deadlines today');
+    }
+  } catch (error) {
+    log(`Error scheduling deadline: ${error}`, 'error');
+  }
+}
 
 /**
  * Check habits and update hosts file if needed
@@ -48,6 +86,9 @@ async function checkAndUpdate(): Promise<void> {
   } else {
     log('No changes needed to hosts file');
   }
+
+  // Schedule timer for next deadline
+  await scheduleNextDeadline();
 }
 
 /**
@@ -82,8 +123,7 @@ async function run(): Promise<void> {
 
   // Also run immediately on startup
   try {
-    const result = await checkHabits();
-    updateHostsFile(result.domainsToBlock);
+    await checkAndUpdate();
   } catch (error) {
     log(`Error in initial check: ${error}`, 'error');
   }
