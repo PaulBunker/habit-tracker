@@ -1,6 +1,42 @@
 import { db } from './index';
 import { habits, habitLogs, settings } from './schema';
 import { randomUUID } from 'crypto';
+import type { NewHabitLog } from './schema';
+
+/**
+ * Generate 45 days of realistic weight loss journey data
+ * - Days 1-30: Steady weight loss (200 lbs → ~190 lbs, ~0.33 lbs/day with noise)
+ * - Days 31-45: Plateau phase (fluctuates around 189-191 lbs)
+ */
+function generateWeightData(habitId: string): NewHabitLog[] {
+  const logs: NewHabitLog[] = [];
+  const startWeight = 200;
+
+  for (let i = 45; i >= 0; i--) {
+    const date = new Date(Date.now() - i * 86400000);
+    let weight: number;
+
+    if (i > 15) {
+      // Days 1-30: Weight loss phase (i goes from 45 down to 16)
+      const daysIntoLoss = 45 - i;
+      const baseWeight = startWeight - daysIntoLoss * 0.33;
+      weight = baseWeight + (Math.random() - 0.5) * 1.5; // ±0.75 noise
+    } else {
+      // Days 31-45: Plateau phase (i goes from 15 down to 0)
+      weight = 189.5 + (Math.random() - 0.5) * 2; // 188.5-190.5
+    }
+
+    logs.push({
+      id: randomUUID(),
+      habitId,
+      date: date.toISOString().split('T')[0],
+      status: 'completed',
+      completedAt: date.toISOString(),
+      dataValue: Math.round(weight * 10) / 10,
+    });
+  }
+  return logs;
+}
 
 async function seed() {
   console.log('Seeding database...');
@@ -67,9 +103,11 @@ async function seed() {
   ]);
 
   // Create sample logs
-  const today = new Date().toISOString().split('T')[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
   const twoDaysAgo = new Date(Date.now() - 172800000).toISOString().split('T')[0];
+
+  // Generate 45 days of weight tracking data
+  const weightLogs = generateWeightData(weightTrackingId);
 
   await db.insert(habitLogs).values([
     {
@@ -87,22 +125,7 @@ async function seed() {
       status: 'completed',
       completedAt: new Date(Date.now() - 86400000).toISOString(),
     },
-    {
-      id: randomUUID(),
-      habitId: weightTrackingId,
-      date: twoDaysAgo,
-      status: 'completed',
-      completedAt: new Date(Date.now() - 172800000).toISOString(),
-      dataValue: 185.5,
-    },
-    {
-      id: randomUUID(),
-      habitId: weightTrackingId,
-      date: yesterday,
-      status: 'completed',
-      completedAt: new Date(Date.now() - 86400000).toISOString(),
-      dataValue: 185.0,
-    },
+    ...weightLogs,
     {
       id: randomUUID(),
       habitId: eveningReadingId,
