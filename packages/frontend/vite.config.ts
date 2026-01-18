@@ -27,6 +27,7 @@ function versionMetaPlugin(): Plugin {
     },
   };
 }
+
 const VITE_PORT = parseInt(process.env.VITE_PORT || '5173', 10);
 const BACKEND_PORT = process.env.PORT || '3000';
 

@@ -20,7 +20,7 @@ describe('Production Build', () => {
       const match = html.match(/<meta name="app-version" content="([^"]+)">/);
 
       expect(match).not.toBeNull();
-      expect(match![1]).toMatch(/^[a-f0-9]{7,}|unknown$/);
+      expect(match![1]).toMatch(/^([a-f0-9]{7,}|unknown)$/);
     });
 
     it('should include build-time meta tag with ISO timestamp', () => {
