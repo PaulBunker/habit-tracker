@@ -34,6 +34,7 @@ test-results/
 
 # Claude Code
 .claude/settings.local.json
+.mcp.json
 
 # Logs
 logs
