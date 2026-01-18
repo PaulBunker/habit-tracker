@@ -28,9 +28,15 @@ async function run() {
 
       const result = await checkHabits();
 
-      if (result.overdueHabits.length > 0) {
+      if (result.incompleteTimedHabits.length > 0) {
         log(
-          `Found ${result.overdueHabits.length} overdue habits: ${result.overdueHabits.map((h) => h.name).join(', ')}`
+          `Found ${result.incompleteTimedHabits.length} incomplete timed habits: ${result.incompleteTimedHabits.map((h) => h.name).join(', ')}`
+        );
+      }
+
+      if (result.missedHabits.length > 0) {
+        log(
+          `Marked ${result.missedHabits.length} habits as missed: ${result.missedHabits.map((h) => h.name).join(', ')}`
         );
       }
 
