@@ -103,15 +103,6 @@ async function getBlockedWebsites(): Promise<string[]> {
 }
 
 /**
- * Check all habits and determine which domains should be blocked
- *
- * Blocking Logic:
- * - Block websites when ANY habit with a deadline is overdue (past deadline)
- * - Stay blocked until ALL overdue habits are completed/skipped
- * - Habits without deadlines never trigger blocking
- * - At midnight (new day), unblock and start fresh
- */
-/**
  * Calculate milliseconds until the next habit deadline
  * Returns null if no upcoming deadlines today
  */
