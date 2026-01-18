@@ -21,8 +21,7 @@ async function seed() {
       id: morningExerciseId,
       name: 'Morning Exercise',
       description: 'Do at least 30 minutes of exercise',
-      startTimeUtc: '12:00', // 8:00 AM EST - blocking starts
-      deadlineUtc: '13:00', // 9:00 AM EST - deadline
+      deadlineUtc: '13:00', // 9:00 AM EST - blocking starts when overdue
       timezoneOffset: -240, // EST offset in minutes
       dataTracking: false,
       activeDays: JSON.stringify([1, 2, 3, 4, 5]), // Weekdays only
@@ -32,8 +31,7 @@ async function seed() {
       id: studySessionId,
       name: 'Study Session',
       description: 'Focus on learning for 2 hours',
-      startTimeUtc: '16:00', // 12:00 PM EST
-      deadlineUtc: '18:00', // 2:00 PM EST
+      deadlineUtc: '18:00', // 2:00 PM EST - blocking starts when overdue
       timezoneOffset: -240,
       dataTracking: false,
       isActive: true,
@@ -46,12 +44,13 @@ async function seed() {
       dataTracking: true,
       dataUnit: 'lbs',
       isActive: true,
+      // No deadline - this is just a checklist item, no blocking
     },
     {
       id: eveningReadingId,
       name: 'Evening Reading',
       description: 'Read for at least 30 minutes',
-      deadlineUtc: '01:00', // 9:00 PM EST
+      deadlineUtc: '01:00', // 9:00 PM EST - blocking starts when overdue
       timezoneOffset: -240,
       dataTracking: false,
       isActive: true,

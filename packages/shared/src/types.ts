@@ -8,9 +8,7 @@ export interface Habit {
   id: string;
   name: string;
   description?: string;
-  startTimeUtc?: string; // HH:MM format in UTC - when blocking starts
-  startTimeLocal?: string; // HH:MM format in user's local timezone (computed)
-  deadlineUtc?: string; // HH:MM format in UTC - when habit should be done
+  deadlineUtc?: string; // HH:MM format in UTC - when habit should be done (blocking starts when overdue)
   deadlineLocal?: string; // HH:MM format in user's local timezone (computed)
   timezoneOffset: number; // minutes from UTC
   dataTracking: boolean; // enable numeric input on completion
@@ -40,8 +38,7 @@ export interface AppSettings {
 export interface CreateHabitRequest {
   name: string; // Only required field for quick add
   description?: string;
-  startTimeLocal?: string; // HH:MM in user's local time
-  deadlineLocal?: string; // HH:MM in user's local time
+  deadlineLocal?: string; // HH:MM in user's local time - blocking starts when overdue
   timezoneOffset?: number; // minutes from UTC, defaults to 0
   dataTracking?: boolean;
   dataUnit?: string;
@@ -51,8 +48,7 @@ export interface CreateHabitRequest {
 export interface UpdateHabitRequest {
   name?: string;
   description?: string;
-  startTimeLocal?: string; // When blocking starts
-  deadlineLocal?: string; // When habit should be done
+  deadlineLocal?: string; // When habit should be done - blocking starts when overdue
   timezoneOffset?: number;
   dataTracking?: boolean;
   dataUnit?: string;

@@ -16,7 +16,6 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 export function HabitSettingsPanel({ habit, onClose, onSave }: HabitSettingsPanelProps) {
   const [name, setName] = useState(habit.name);
   const [description, setDescription] = useState(habit.description || '');
-  const [startTimeLocal, setStartTimeLocal] = useState(habit.startTimeLocal || '');
   const [deadlineLocal, setDeadlineLocal] = useState(habit.deadlineLocal || '');
   const [dataTracking, setDataTracking] = useState(habit.dataTracking);
   const [dataUnit, setDataUnit] = useState(habit.dataUnit || '');
@@ -58,7 +57,6 @@ export function HabitSettingsPanel({ habit, onClose, onSave }: HabitSettingsPane
       const response = await habitsApi.update(habit.id, {
         name: name.trim(),
         description: description.trim() || undefined,
-        startTimeLocal: startTimeLocal || undefined,
         deadlineLocal: deadlineLocal || undefined,
         timezoneOffset: getTimezoneOffset(),
         dataTracking,
@@ -138,28 +136,15 @@ export function HabitSettingsPanel({ habit, onClose, onSave }: HabitSettingsPane
             />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="settings-start">Start Time</label>
-              <input
-                id="settings-start"
-                type="time"
-                value={startTimeLocal}
-                onChange={(e) => setStartTimeLocal(e.target.value)}
-              />
-              <small>When blocking starts</small>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="settings-deadline">Deadline</label>
-              <input
-                id="settings-deadline"
-                type="time"
-                value={deadlineLocal}
-                onChange={(e) => setDeadlineLocal(e.target.value)}
-              />
-              <small>When habit should be done</small>
-            </div>
+          <div className="form-group">
+            <label htmlFor="settings-deadline">Deadline</label>
+            <input
+              id="settings-deadline"
+              type="time"
+              value={deadlineLocal}
+              onChange={(e) => setDeadlineLocal(e.target.value)}
+            />
+            <small>Blocking starts when overdue</small>
           </div>
 
           <div className="form-group">

@@ -8,8 +8,7 @@ export const habits = sqliteTable('habits', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   description: text('description'),
-  startTimeUtc: text('start_time_utc'), // HH:MM format in UTC - when blocking starts
-  deadlineUtc: text('deadline_utc'), // HH:MM format in UTC - when habit should be done
+  deadlineUtc: text('deadline_utc'), // HH:MM format in UTC - blocking starts when overdue
   timezoneOffset: integer('timezone_offset').notNull().default(0), // minutes from UTC
   dataTracking: integer('data_tracking', { mode: 'boolean' }).notNull().default(false),
   dataUnit: text('data_unit'), // e.g., "lbs", "minutes", "calories"

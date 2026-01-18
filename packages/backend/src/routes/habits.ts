@@ -14,7 +14,6 @@ const router = Router();
 const createHabitSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
-  startTimeLocal: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).optional(),
   deadlineLocal: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).optional(),
   timezoneOffset: z.number().int().min(-720).max(840).optional().default(0),
   dataTracking: z.boolean().optional().default(false),
@@ -25,7 +24,6 @@ const createHabitSchema = z.object({
 const updateHabitSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional().nullable(),
-  startTimeLocal: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).optional().nullable(),
   deadlineLocal: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).optional().nullable(),
   timezoneOffset: z.number().int().min(-720).max(840).optional(),
   dataTracking: z.boolean().optional(),
@@ -50,8 +48,6 @@ function formatHabitResponse(habit: typeof habits.$inferSelect) {
     id: habit.id,
     name: habit.name,
     description: habit.description,
-    startTimeUtc: habit.startTimeUtc,
-    startTimeLocal: habit.startTimeUtc ? utcTimeToLocal(habit.startTimeUtc, habit.timezoneOffset) : undefined,
     deadlineUtc: habit.deadlineUtc,
     deadlineLocal: habit.deadlineUtc ? utcTimeToLocal(habit.deadlineUtc, habit.timezoneOffset) : undefined,
     timezoneOffset: habit.timezoneOffset,
@@ -104,9 +100,6 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       id: randomUUID(),
       name: validatedData.name,
       description: validatedData.description || null,
-      startTimeUtc: validatedData.startTimeLocal
-        ? localTimeToUtc(validatedData.startTimeLocal, validatedData.timezoneOffset)
-        : null,
       deadlineUtc: validatedData.deadlineLocal
         ? localTimeToUtc(validatedData.deadlineLocal, validatedData.timezoneOffset)
         : null,
@@ -154,11 +147,6 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     }
     if (validatedData.timezoneOffset !== undefined) {
       updateData.timezoneOffset = validatedData.timezoneOffset;
-    }
-    if (validatedData.startTimeLocal !== undefined) {
-      updateData.startTimeUtc = validatedData.startTimeLocal
-        ? localTimeToUtc(validatedData.startTimeLocal, timezoneOffset)
-        : null;
     }
     if (validatedData.deadlineLocal !== undefined) {
       updateData.deadlineUtc = validatedData.deadlineLocal

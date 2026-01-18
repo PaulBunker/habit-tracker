@@ -63,14 +63,10 @@ export function ChecklistItem({ habit, todayLog, onUpdate, onOpenSettings }: Che
   };
 
   const getTimeDisplay = () => {
-    const parts: string[] = [];
-    if (habit.startTimeLocal) {
-      parts.push(`from ${habit.startTimeLocal}`);
-    }
     if (habit.deadlineLocal) {
-      parts.push(`by ${habit.deadlineLocal}`);
+      return `by ${habit.deadlineLocal}`;
     }
-    return parts.join(' ');
+    return '';
   };
 
   const getStatusClass = () => {

@@ -75,33 +75,16 @@ function isHabitActiveToday(habit: typeof habits.$inferSelect): boolean {
 }
 
 /**
- * Check if a habit is a "timed" habit (has start time or deadline)
+ * Check if a habit has a deadline (only habits with deadlines can block)
  */
-function isTimedHabit(habit: typeof habits.$inferSelect): boolean {
-  return !!(habit.startTimeUtc || habit.deadlineUtc);
+function hasDeadline(habit: typeof habits.$inferSelect): boolean {
+  return !!habit.deadlineUtc;
 }
 
 /**
- * Check if we're past a habit's start time (blocking should have begun)
- * If no start time but has deadline, blocking starts at midnight (00:00)
+ * Check if a habit is overdue (past its deadline)
  */
-function isPastStartTime(habit: typeof habits.$inferSelect, currentTime: string): boolean {
-  if (habit.startTimeUtc) {
-    return currentTime >= habit.startTimeUtc;
-  }
-  // If there's a deadline but no start time, blocking starts at 00:00
-  if (habit.deadlineUtc) {
-    return true; // Always past "start" if there's only a deadline
-  }
-  return false;
-}
-
-/**
- * Check if we're past midnight in a way that indicates a new day rollover
- * This is used to mark habits as missed
- */
-function shouldMarkAsMissed(habit: typeof habits.$inferSelect, currentTime: string): boolean {
-  // If the habit has a deadline and current time is past it, mark as missed
+function isOverdue(habit: typeof habits.$inferSelect, currentTime: string): boolean {
   if (habit.deadlineUtc) {
     return currentTime >= habit.deadlineUtc;
   }
@@ -122,10 +105,10 @@ async function getBlockedWebsites(): Promise<string[]> {
 /**
  * Check all habits and determine which domains should be blocked
  *
- * V2 Logic:
- * - Block websites when ANY timed habit's start time has passed
- * - Stay blocked until ALL timed habits are completed/skipped
- * - At deadline, mark habits as missed (they stay blocked until midnight)
+ * Blocking Logic:
+ * - Block websites when ANY habit with a deadline is overdue (past deadline)
+ * - Stay blocked until ALL overdue habits are completed/skipped
+ * - Habits without deadlines never trigger blocking
  * - At midnight (new day), unblock and start fresh
  */
 export async function checkHabits(): Promise<HabitCheckResult> {
@@ -137,19 +120,18 @@ export async function checkHabits(): Promise<HabitCheckResult> {
 
   const incompleteTimedHabits: HabitCheckResult['incompleteTimedHabits'] = [];
   const missedHabits: HabitCheckResult['missedHabits'] = [];
-  let hasStartedTimedHabit = false;
-  let allTimedHabitsComplete = true;
+  let hasOverdueHabit = false;
 
   for (const habit of activeHabits) {
-    // Skip untimed habits (no blocking impact) and habits not active today
-    if (!isTimedHabit(habit) || !isHabitActiveToday(habit)) {
+    // Skip habits without deadlines (they never block) and habits not active today
+    if (!hasDeadline(habit) || !isHabitActiveToday(habit)) {
       continue;
     }
 
-    // Check if this habit's start time has passed
-    const pastStartTime = isPastStartTime(habit, currentTime);
-    if (pastStartTime) {
-      hasStartedTimedHabit = true;
+    // Check if this habit is overdue
+    const habitIsOverdue = isOverdue(habit, currentTime);
+    if (!habitIsOverdue) {
+      continue; // Not overdue yet, no blocking impact
     }
 
     // Check if habit has been completed or skipped today
@@ -160,16 +142,15 @@ export async function checkHabits(): Promise<HabitCheckResult> {
 
     const isComplete = todayLog && (todayLog.status === 'completed' || todayLog.status === 'skipped');
 
-    if (!isComplete && pastStartTime) {
-      allTimedHabitsComplete = false;
+    if (!isComplete) {
+      hasOverdueHabit = true;
       incompleteTimedHabits.push({
         id: habit.id,
         name: habit.name,
       });
 
-      // Check if we should mark as missed (past deadline)
-      if (shouldMarkAsMissed(habit, currentTime) && !todayLog) {
-        // Mark as missed
+      // Mark as missed if no log exists yet
+      if (!todayLog) {
         await db.insert(habitLogs).values({
           id: randomUUID(),
           habitId: habit.id,
@@ -186,13 +167,9 @@ export async function checkHabits(): Promise<HabitCheckResult> {
     }
   }
 
-  // Determine if we should block
-  // Block when: at least one timed habit has started AND not all timed habits are complete
-  const shouldBlock = hasStartedTimedHabit && !allTimedHabitsComplete;
-
-  // Get domains to block
+  // Get domains to block if any habits are overdue and incomplete
   let domainsToBlock: string[] = [];
-  if (shouldBlock) {
+  if (hasOverdueHabit) {
     domainsToBlock = await getBlockedWebsites();
   }
 
