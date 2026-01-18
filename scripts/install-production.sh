@@ -36,6 +36,11 @@ if [ ! -f "$PROJECT_DIR/package.json" ]; then
     exit 1
 fi
 
+# Capture git hash for verification
+EXPECTED_VERSION=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+echo "Deploying version: $EXPECTED_VERSION"
+echo ""
+
 # Step 1: Build all packages
 echo "[1/5] Building all packages..."
 cd "$PROJECT_DIR"
@@ -210,7 +215,33 @@ else
     echo "  Backend: Starting... (may take a few seconds)"
 fi
 
-# Check frontend
+# Check frontend and verify version
+echo ""
+echo "Verifying deployment version..."
+sleep 2  # Give frontend time to start
+
+DEPLOYED_VERSION=""
+for i in 1 2 3 4 5; do
+    DEPLOYED_VERSION=$(curl -s http://localhost:5173 2>/dev/null | grep -o 'app-version" content="[^"]*"' | cut -d'"' -f3 || echo "")
+    if [ -n "$DEPLOYED_VERSION" ]; then
+        break
+    fi
+    sleep 2
+done
+
+if [ "$DEPLOYED_VERSION" = "$EXPECTED_VERSION" ]; then
+    echo "  ✓ Version verified: $DEPLOYED_VERSION"
+elif [ -n "$DEPLOYED_VERSION" ]; then
+    echo "  ⚠ Version mismatch!"
+    echo "    Expected: $EXPECTED_VERSION"
+    echo "    Deployed: $DEPLOYED_VERSION"
+else
+    echo "  ⚠ Could not verify version (frontend may still be starting)"
+    echo "    Expected: $EXPECTED_VERSION"
+    echo "    Check manually: curl -s http://localhost:5173 | grep app-version"
+fi
+
+echo ""
 echo "  Frontend: http://localhost:5173"
 echo ""
 
