@@ -128,8 +128,8 @@ export function GlobalSettings() {
         <section className="settings-section">
           <h2>How It Works</h2>
           <div className="info-box">
-            <p><strong>Blocking starts</strong> when any habit with a start time reaches that time.</p>
-            <p><strong>Blocking ends</strong> when ALL timed habits are completed or skipped.</p>
+            <p><strong>Blocking starts</strong> when any habit with a deadline becomes overdue.</p>
+            <p><strong>Blocking ends</strong> when ALL overdue habits are completed or skipped.</p>
             <p><strong>Missed habits</strong> keep blocking until midnight, then reset.</p>
           </div>
         </section>
