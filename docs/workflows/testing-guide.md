@@ -54,9 +54,11 @@ describe('POST /api/habits', () => {
       .post('/api/habits')
       .send({
         name: 'Morning Exercise',
+        startTimeLocal: '07:00',
         deadlineLocal: '09:00',
         timezoneOffset: -300,
-        blockedWebsites: ['reddit.com'],
+        dataTracking: true,
+        dataUnit: 'minutes',
       });
 
     expect(response.status).toBe(201);
@@ -80,32 +82,38 @@ describe('POST /api/habits', () => {
 **Example - Frontend Unit Test:**
 
 ```typescript
-// packages/frontend/src/components/HabitCard.test.tsx
+// packages/frontend/src/components/ChecklistItem.test.tsx
 import { render, screen, fireEvent } from '@testing-library/react';
-import { HabitCard } from './HabitCard';
+import { ChecklistItem } from './ChecklistItem';
 
-describe('HabitCard', () => {
+describe('ChecklistItem', () => {
   const mockHabit = {
     id: '1',
     name: 'Reading',
-    deadlineLocal: '21:00',
-    blockedWebsites: ['twitter.com'],
+    startTimeUtc: '20:00',
+    deadlineUtc: '21:00',
+    dataTracking: true,
+    dataUnit: 'pages',
     isActive: true,
   };
 
-  it('should render habit details', () => {
-    render(<HabitCard habit={mockHabit} onUpdate={jest.fn()} />);
-
+  it('should render habit name', () => {
+    render(<ChecklistItem habit={mockHabit} onComplete={jest.fn()} />);
     expect(screen.getByText('Reading')).toBeInTheDocument();
-    expect(screen.getByText(/21:00/)).toBeInTheDocument();
   });
 
-  it('should open check-in modal on button click', () => {
-    render(<HabitCard habit={mockHabit} onUpdate={jest.fn()} />);
+  it('should call onComplete when checkbox clicked', () => {
+    const onComplete = jest.fn();
+    render(<ChecklistItem habit={mockHabit} onComplete={onComplete} />);
 
-    fireEvent.click(screen.getByText('Check In'));
+    fireEvent.click(screen.getByRole('checkbox'));
 
-    expect(screen.getByText(/Check In: Reading/)).toBeInTheDocument();
+    expect(onComplete).toHaveBeenCalledWith(mockHabit.id);
+  });
+
+  it('should show data tracking input when enabled', () => {
+    render(<ChecklistItem habit={mockHabit} onComplete={jest.fn()} />);
+    expect(screen.getByPlaceholderText(/pages/i)).toBeInTheDocument();
   });
 });
 ```
@@ -142,44 +150,49 @@ npm run test -- --coverage
 **Example - Feature File:**
 
 ```gherkin
-# packages/e2e/features/habit-creation.feature
-Feature: Habit Creation
+# packages/e2e/features/v2/daily-checklist.feature
+Feature: Daily Checklist
   As a user
-  I want to create habits with deadlines
-  So that I can track my daily routines
+  I want to see my daily habits as a checklist
+  So that I can quickly complete them
 
-  Scenario: Create a basic habit
-    Given I am on the habit creation page
-    When I enter "Morning Exercise" as the habit name
-    And I set the deadline to "09:00"
-    And I save the habit
-    Then I should see "Morning Exercise" in my habit list
+  Scenario: Complete a habit from checklist
+    Given I have a habit called "Morning Exercise"
+    And I am on the home page
+    When I check the checkbox for "Morning Exercise"
+    Then the habit should be marked as completed
 
-  Scenario: Validation prevents empty name
-    Given I am on the habit creation page
-    When I try to save without entering a name
-    Then I should see an error message "Habit name is required"
+  Scenario: Complete habit with tracked value
+    Given I have a habit "Reading" with data tracking in "pages"
+    And I am on the home page
+    When I enter "25" as the tracked value
+    And I check the checkbox for "Reading"
+    Then the habit log should show value "25"
 ```
 
 **Example - Step Definitions:**
 
 ```typescript
-// packages/e2e/step-definitions/habit-creation.steps.ts
+// packages/e2e/step-definitions/daily-checklist.steps.ts
 import { Given, When, Then } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 
-Given('I am on the habit creation page', async function() {
-  await this.page.goto('http://localhost:5173');
-  await this.page.click('button:has-text("Create New Habit")');
+Given('I have a habit called {string}', async function(name: string) {
+  await this.api.post('/api/habits', { name });
 });
 
-When('I enter {string} as the habit name', async function(name: string) {
-  await this.page.fill('input#name', name);
+Given('I am on the home page', async function() {
+  await this.page.goto('http://localhost:5174');
 });
 
-Then('I should see {string} in my habit list', async function(habitName: string) {
-  const habitCard = this.page.locator('.habit-card', { hasText: habitName });
-  await expect(habitCard).toBeVisible();
+When('I check the checkbox for {string}', async function(habitName: string) {
+  const checkbox = this.page.locator(`[data-habit-name="${habitName}"] input[type="checkbox"]`);
+  await checkbox.click();
+});
+
+Then('the habit should be marked as completed', async function() {
+  const status = this.page.locator('[data-status="completed"]');
+  await expect(status).toBeVisible();
 });
 ```
 
@@ -211,30 +224,39 @@ npm run test:bdd
 import { test, expect } from '@playwright/test';
 
 test.describe('Complete Habit Flow', () => {
-  test('user creates, completes, and deletes a habit', async ({ page }) => {
+  test('user creates and completes a habit', async ({ page }) => {
     // Navigate to app
-    await page.goto('http://localhost:5173');
+    await page.goto('http://localhost:5174');
 
-    // Create habit
-    await page.click('button:has-text("Create New Habit")');
-    await page.fill('input#name', 'Test Habit');
-    await page.fill('input#deadline', '10:00');
-    await page.click('button:has-text("Create Habit")');
+    // Create habit using quick add
+    await page.fill('[data-testid="quick-add-input"]', 'Test Habit');
+    await page.click('[data-testid="quick-add-submit"]');
 
     // Verify created
-    await expect(page.locator('.habit-card:has-text("Test Habit")')).toBeVisible();
+    await expect(page.locator('text=Test Habit')).toBeVisible();
 
-    // Complete habit
-    const habitCard = page.locator('.habit-card:has-text("Test Habit")');
-    await habitCard.locator('button:has-text("Check In")').click();
-    await page.click('button:has-text("Mark Complete")');
+    // Complete habit via checkbox
+    await page.click('[data-habit-name="Test Habit"] input[type="checkbox"]');
 
-    // Delete habit
-    page.on('dialog', dialog => dialog.accept());
-    await habitCard.locator('button:has-text("Delete")').click();
+    // Verify completed
+    await expect(page.locator('[data-habit-name="Test Habit"][data-status="completed"]')).toBeVisible();
+  });
 
-    // Verify deleted
-    await expect(habitCard).not.toBeVisible();
+  test('user configures blocked websites', async ({ page }) => {
+    await page.goto('http://localhost:5174/settings');
+
+    // Add a blocked website
+    await page.fill('[data-testid="website-input"]', 'reddit.com');
+    await page.click('[data-testid="add-website-button"]');
+
+    // Verify added
+    await expect(page.locator('text=reddit.com')).toBeVisible();
+
+    // Remove it
+    await page.click('[data-testid="remove-reddit.com"]');
+
+    // Verify removed
+    await expect(page.locator('text=reddit.com')).not.toBeVisible();
   });
 });
 ```
@@ -274,28 +296,46 @@ npx playwright test --headed
 // packages/backend/src/integration/habits.integration.test.ts
 describe('Habit Integration', () => {
   it('should create habit and mark as missed after deadline', async () => {
-    // Create habit
+    // Create habit with past deadline
     const createResponse = await request(app)
       .post('/api/habits')
       .send({
         name: 'Test',
         deadlineLocal: '00:01',
         timezoneOffset: 0,
-        blockedWebsites: ['example.com'],
       });
 
     const habitId = createResponse.body.data.id;
 
-    // Trigger daemon check
-    await request(app).post('/api/daemon/sync');
-
-    // Wait for daemon
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Trigger daemon check (simulated)
+    await checkHabits();
 
     // Check logs
     const logsResponse = await request(app).get(`/api/habits/${habitId}/logs`);
 
     expect(logsResponse.body.data[0].status).toBe('missed');
+  });
+
+  it('should block websites when habits are incomplete', async () => {
+    // Set up blocked websites
+    await request(app)
+      .put('/api/settings')
+      .send({ blockedWebsites: ['reddit.com'] });
+
+    // Create habit with past start time
+    await request(app)
+      .post('/api/habits')
+      .send({
+        name: 'Test',
+        startTimeLocal: '00:00',
+        deadlineLocal: '23:59',
+        timezoneOffset: 0,
+      });
+
+    // Check blocking status
+    const result = await checkHabits();
+
+    expect(result.domainsToBlock).toContain('reddit.com');
   });
 });
 ```
@@ -316,15 +356,16 @@ packages/
 ├── frontend/
 │   └── src/
 │       └── components/
-│           ├── HabitCard.tsx
-│           └── HabitCard.test.tsx      # Component tests
+│           ├── DailyChecklist.tsx
+│           └── DailyChecklist.test.tsx  # Component tests
 └── e2e/
     ├── features/
-    │   └── habits.feature              # BDD scenarios
+    │   └── v2/
+    │       └── daily-checklist.feature  # BDD scenarios
     ├── step-definitions/
-    │   └── habits.steps.ts             # Cucumber steps
+    │   └── daily-checklist.steps.ts     # Cucumber steps
     └── tests/
-        └── habits.spec.ts              # Playwright E2E
+        └── habits.spec.ts               # Playwright E2E
 ```
 
 ### Naming Conventions
@@ -383,9 +424,12 @@ Create reusable test data:
 export const mockHabit = {
   id: '1',
   name: 'Test Habit',
+  startTimeUtc: '11:00',
   deadlineUtc: '13:00',
   timezoneOffset: -300,
-  blockedWebsites: JSON.stringify(['reddit.com']),
+  dataTracking: false,
+  dataUnit: null,
+  activeDays: null,
   isActive: true,
   createdAt: '2026-01-17T00:00:00.000Z',
 };
@@ -395,8 +439,14 @@ export const mockHabitLog = {
   habitId: '1',
   date: '2026-01-17',
   status: 'completed' as const,
+  value: 30,
   completedAt: '2026-01-17T08:00:00.000Z',
   createdAt: '2026-01-17T08:00:00.000Z',
+};
+
+export const mockSettings = {
+  blockedWebsites: ['reddit.com', 'twitter.com'],
+  timezone: 'America/New_York',
 };
 ```
 
@@ -408,9 +458,12 @@ export function createHabit(overrides = {}) {
   return {
     id: randomUUID(),
     name: 'Test Habit',
+    startTimeUtc: null,
     deadlineUtc: '13:00',
     timezoneOffset: -300,
-    blockedWebsites: JSON.stringify([]),
+    dataTracking: false,
+    dataUnit: null,
+    activeDays: null,
     isActive: true,
     createdAt: new Date().toISOString(),
     ...overrides,
@@ -480,7 +533,7 @@ jobs:
 ```typescript
 it('should create habit', async () => {
   // Arrange
-  const habitData = { name: 'Test', deadline: '09:00' };
+  const habitData = { name: 'Test', deadlineLocal: '09:00', timezoneOffset: 0 };
 
   // Act
   const response = await request(app)
@@ -532,6 +585,7 @@ it('should mark habit as missed when deadline passes without completion', () => 
 afterEach(async () => {
   await db.delete(habits);
   await db.delete(habitLogs);
+  await db.delete(settings);
 });
 ```
 
@@ -584,7 +638,7 @@ import http from 'k6/http';
 import { check } from 'k6';
 
 export default function() {
-  const res = http.get('http://localhost:3000/api/habits');
+  const res = http.get('http://localhost:3001/api/habits');
   check(res, {
     'status is 200': (r) => r.status === 200,
     'response time < 200ms': (r) => r.timings.duration < 200,
@@ -600,11 +654,11 @@ k6 run performance-test.js
 ## Accessibility Testing
 
 ```typescript
-// packages/frontend/src/components/HabitForm.test.tsx
+// packages/frontend/src/components/DailyChecklist.test.tsx
 import { axe } from 'jest-axe';
 
 it('should have no accessibility violations', async () => {
-  const { container } = render(<HabitForm />);
+  const { container } = render(<DailyChecklist habits={[]} />);
   const results = await axe(container);
   expect(results).toHaveNoViolations();
 });
@@ -614,9 +668,9 @@ it('should have no accessibility violations', async () => {
 
 ```typescript
 // packages/e2e/tests/visual.spec.ts
-test('habit card looks correct', async ({ page }) => {
-  await page.goto('http://localhost:5173');
-  await expect(page.locator('.habit-card').first()).toHaveScreenshot();
+test('daily checklist looks correct', async ({ page }) => {
+  await page.goto('http://localhost:5174');
+  await expect(page.locator('[data-testid="daily-checklist"]')).toHaveScreenshot();
 });
 ```
 

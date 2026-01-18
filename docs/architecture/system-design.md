@@ -8,16 +8,17 @@ The Habit Tracker is a full-stack application that combines a web interface, RES
 
 ```
 ┌─────────────────┐
-│   React UI      │ (Frontend - Port 5173)
-│   (Vite)        │
+│   React UI      │ (Frontend)
+│   (Vite)        │ Dev: Port 5174 | Prod: Port 5173
 └────────┬────────┘
          │ HTTP
          ▼
 ┌─────────────────┐
-│   Express API   │ (Backend - Port 3000)
-│   + SQLite DB   │
+│   Express API   │ (Backend)
+│   + SQLite DB   │ Dev: Port 3001 | Prod: Port 3000
 └────────┬────────┘
          │ Shared Database
+         │ Unix Socket IPC
          ▼
 ┌─────────────────┐
 │   Daemon        │ (Background Service)
@@ -26,25 +27,40 @@ The Habit Tracker is a full-stack application that combines a web interface, RES
 └─────────────────┘
 ```
 
+## Environment Separation
+
+| Environment | Database Location | Backend Port | Frontend Port | Purpose |
+|-------------|-------------------|--------------|---------------|---------|
+| **Development** | `./packages/backend/data/dev/habit-tracker.db` | 3001 | 5174 | Sandbox for testing |
+| **Production** | `~/.habit-tracker/data/habit-tracker.db` | 3000 | 5173 | Daily use |
+
+> **Note:** Relative paths in `DB_PATH` are resolved from the monorepo root using `INIT_CWD` (set by npm when running via workspaces). This ensures both backend and daemon use the same database file regardless of which package directory they run from.
+
 ## Components
 
 ### 1. Frontend (React + Vite)
 
 **Responsibilities:**
 - User interface for habit management
-- Real-time habit status display
-- Form validation
+- Daily checklist view for completing habits
+- Calendar view for tracking history
+- Graph view for data visualization
+- Settings management
 - API communication
 
 **Key Files:**
-- `App.tsx`: Main application component
-- `components/HabitList.tsx`: Display habits
-- `components/HabitForm.tsx`: Create/edit habits
-- `components/CheckInModal.tsx`: Complete/skip habits
+- `App.tsx`: Main application component with routing
+- `pages/GlobalSettings.tsx`: Global settings management
+- `components/DailyChecklist.tsx`: Daily habit completion view
+- `components/ChecklistItem.tsx`: Individual habit completion control
+- `components/CalendarView.tsx`: Calendar-based habit history
+- `components/GraphView.tsx`: Data visualization for tracked values
+- `components/HabitSettingsPanel.tsx`: Individual habit configuration
+- `components/QuickAddHabit.tsx`: Quick habit creation
 - `api/client.ts`: API communication layer
 
 **State Management:**
-- Custom hooks (`useHabits`)
+- Custom hooks (`useHabits`, `useSettings`)
 - Local component state
 - No global state library (keeps it simple)
 
@@ -58,10 +74,12 @@ The Habit Tracker is a full-stack application that combines a web interface, RES
 - Error handling
 
 **Key Files:**
-- `server.ts`: Express server setup
+- `server.ts`: Express server setup with environment awareness
 - `routes/habits.ts`: Habit CRUD endpoints
+- `routes/settings.ts`: Settings endpoints (blocked websites)
 - `routes/status.ts`: System status endpoints
 - `db/schema.ts`: Drizzle ORM schema
+- `db/index.ts`: Database connection with environment handling
 - `middleware/validators.ts`: Zod validation schemas
 
 **Database:**
@@ -72,74 +90,87 @@ The Habit Tracker is a full-stack application that combines a web interface, RES
 ### 3. Daemon (Node.js Service)
 
 **Responsibilities:**
-- Poll database every 60 seconds
-- Check habit deadlines
-- Modify hosts file to block/unblock sites
+- Listen for IPC refresh signals from backend via Unix socket
+- Fallback poll every 30 seconds for time-based triggers (deadlines)
+- Check habit start times and deadlines
+- Modify hosts file to block/unblock sites based on global blocked websites
 - Create backups before modifications
 - Log all actions
 
 **Key Files:**
-- `index.ts`: Main daemon loop
-- `scheduler.ts`: Habit deadline checking
+- `index.ts`: Main daemon loop with socket server and environment logging
+- `socket-server.ts`: Unix socket server for IPC
+- `scheduler.ts`: Habit deadline checking and database queries
 - `hosts-manager.ts`: Hosts file operations
 - `schema.ts`: Database schema (shared with backend)
 
 **Safety Features:**
 - Timestamped backups before every change
-- Rollback capability on errors
-- Comprehensive logging
-- DNS cache flushing
+- 30-day backup retention
+- Clear section markers (`# HABIT-TRACKER-START/END`)
+- DNS cache flushing after changes
+- Graceful shutdown handlers
+- Restore script available (`npm run daemon:restore`)
 
 ### 4. Shared Package
 
 **Responsibilities:**
 - Type definitions shared across packages
 - Utility functions
+- Daemon IPC client
 - Constants
 
 **Key Files:**
 - `types.ts`: TypeScript interfaces
 - `utils.ts`: Helper functions (timezone, validation)
+- `daemon-client.ts`: Unix socket client for notifying daemon
 
 ## Data Flow
 
 ### Creating a Habit
 
-1. User fills form in React UI
-2. Frontend validates input (domain format, required fields)
-3. API request sent to `POST /api/habits`
-4. Backend validates with Zod schemas
-5. Timezone conversion (local → UTC)
-6. Database insert via Drizzle ORM
-7. Response returned to frontend
-8. UI updates to show new habit
+1. User enters habit name in QuickAddHabit component
+2. Frontend sends request to `POST /api/habits`
+3. Backend validates with Zod schemas
+4. Database insert via Drizzle ORM
+5. Response returned to frontend
+6. UI updates to show new habit in DailyChecklist
 
-### Deadline Enforcement
+### Website Blocking (V2 Global Blocking)
 
-1. Daemon wakes up every 60 seconds
-2. Queries database for active habits
-3. Compares current UTC time with deadlines
-4. For overdue habits without completion:
-   - Marks as "missed" in database
-   - Collects blocked domains
-5. Creates timestamped backup of hosts file
-6. Updates hosts file with blocking entries
-7. Flushes DNS cache
-8. Logs actions to `~/.habit-tracker/logs/`
+V2 uses global blocked websites instead of per-habit blocking:
+
+1. User configures blocked websites in GlobalSettings page
+2. Settings stored in database via `POST /api/settings`
+3. Daemon reads blocked websites from settings table
+4. When any timed habit's start time passes:
+   - All configured websites are blocked
+   - Blocking continues until ALL timed habits are complete
+5. Once all timed habits are completed/skipped:
+   - All websites are unblocked
+   - Hosts file is restored
 
 ### Completing a Habit
 
-1. User clicks "Check In" on habit card
-2. Modal opens with Complete/Skip options
-3. User submits (with optional notes)
-4. API request to `POST /api/habits/:id/complete`
-5. Backend creates/updates HabitLog
-6. Response returned
-7. On next daemon cycle:
-   - Checks habit status
-   - Removes blocking entries
-   - Updates hosts file
+1. User checks checkbox in DailyChecklist
+2. API request to `POST /api/habits/:id/complete`
+3. Backend creates HabitLog entry with status
+4. Optional: Record tracked value (with units)
+5. Response returned
+6. On next daemon cycle:
+   - Checks if ALL timed habits are complete
+   - If yes, removes blocking entries from hosts file
    - Flushes DNS cache
+
+### Data Tracking
+
+V2 supports optional data tracking for habits:
+
+1. User enables data tracking in HabitSettingsPanel
+2. Configures unit type (minutes, hours, count, etc.)
+3. When completing habit, user enters tracked value
+4. Values stored in HabitLog
+5. GraphView visualizes tracked data over time
 
 ## Design Decisions
 
@@ -168,6 +199,18 @@ The Habit Tracker is a full-stack application that combines a web interface, RES
   - Can be bypassed by tech-savvy users
 
 **Decision**: Hosts file is the simplest cross-browser solution. Future versions could add browser extension support.
+
+### Why Global Blocking (V2)?
+
+- **Pros**:
+  - Simpler mental model for users
+  - One list of blocked sites to manage
+  - Blocking logic is straightforward (any incomplete = blocked)
+- **Cons**:
+  - Less granular control per habit
+  - All-or-nothing approach
+
+**Decision**: V2 global blocking simplifies UX. Per-habit blocking was confusing for users.
 
 ### Why Monorepo?
 
@@ -237,7 +280,8 @@ The daemon requires write access to `/etc/hosts`. This is achieved through:
 
 ### Daemon
 
-- 60-second poll interval (configurable)
+- Instant IPC refresh via Unix socket (~10ms)
+- 30-second fallback poll interval for time-based triggers
 - Efficient queries (only active habits)
 - Debouncing for rapid changes
 
@@ -294,7 +338,7 @@ Location: `~/.habit-tracker/logs/`
 Format:
 ```
 [2026-01-17T10:30:00.000Z] [INFO] Checking habits...
-[2026-01-17T10:30:01.000Z] [INFO] Found 2 overdue habits: Morning Exercise, Study Session
+[2026-01-17T10:30:01.000Z] [INFO] Found 2 incomplete timed habits: Morning Exercise, Study Session
 [2026-01-17T10:30:02.000Z] [INFO] Backup created: /Users/user/.habit-tracker/backups/hosts_2026-01-17T10-30-02.bak
 [2026-01-17T10:30:03.000Z] [INFO] Hosts file updated. Blocking 3 domains: reddit.com, twitter.com, youtube.com
 ```
@@ -311,20 +355,21 @@ Format:
 
 ## Deployment
 
-### Development
+### Development (Sandbox)
 
 ```bash
-npm run dev
+npm run dev:sandbox
 ```
 
-Starts all services concurrently.
+Starts all services in development mode on ports 5174/3001.
 
 ### Production
 
 ```bash
-npm run build
-npm start
+npm run start:prod
 ```
+
+Starts all services in production mode on ports 5173/3000.
 
 ### Daemon Installation
 
@@ -333,6 +378,13 @@ npm run install:daemon
 ```
 
 Creates launchd plist and loads daemon.
+
+### Daemon Status & Restore
+
+```bash
+npm run daemon:status   # Show current blocking state
+npm run daemon:restore  # Restore hosts from backup
+```
 
 ## Future Enhancements
 

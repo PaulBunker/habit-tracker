@@ -47,8 +47,12 @@ function processData(data: any): void {
 interface CreateHabitRequest {
   name: string;
   description?: string;
-  deadlineLocal: string;
-  blockedWebsites: string[];
+  startTimeLocal?: string;
+  deadlineLocal?: string;
+  timezoneOffset?: number;
+  dataTracking?: boolean;
+  dataUnit?: string;
+  activeDays?: number[];
 }
 
 // Use for function signatures
@@ -99,7 +103,7 @@ const permission = false;
 
 - **kebab-case** for directories: `habit-tracker/`
 - **camelCase** for files: `habitManager.ts`
-- **PascalCase** for components: `HabitCard.tsx`
+- **PascalCase** for components: `DailyChecklist.tsx`
 - **kebab-case** for config files: `eslint.config.js`
 
 ## Code Organization
@@ -112,21 +116,21 @@ import { useState } from 'react';
 import type { Habit } from '@habit-tracker/shared';
 
 // 2. Types and interfaces
-interface HabitCardProps {
+interface ChecklistItemProps {
   habit: Habit;
-  onUpdate: () => void;
+  onComplete: (id: string, value?: number) => void;
 }
 
 // 3. Constants
 const MAX_NAME_LENGTH = 100;
 
 // 4. Main component/function
-export function HabitCard({ habit, onUpdate }: HabitCardProps) {
+export function ChecklistItem({ habit, onComplete }: ChecklistItemProps) {
   // ...
 }
 
 // 5. Helper functions (if small and specific to this file)
-function formatDeadline(time: string): string {
+function formatTime(time: string): string {
   // ...
 }
 ```
@@ -143,12 +147,13 @@ function validateHabitName(name: string): boolean {
   return name.length > 0 && name.length <= 100;
 }
 
-function validateDeadline(time: string): boolean {
+function validateTimeFormat(time: string): boolean {
   return /^([0-1][0-9]|2[0-3]):([0-5][0-9])$/.test(time);
 }
 
 function validateHabit(habit: CreateHabitRequest): boolean {
-  return validateHabitName(habit.name) && validateDeadline(habit.deadlineLocal);
+  return validateHabitName(habit.name) &&
+    (!habit.deadlineLocal || validateTimeFormat(habit.deadlineLocal));
 }
 
 // Bad - doing too much
@@ -156,7 +161,7 @@ function validateHabit(habit: any): boolean {
   if (!habit.name || habit.name.length === 0 || habit.name.length > 100) {
     return false;
   }
-  if (!/^([0-1][0-9]|2[0-3]):([0-5][0-9])$/.test(habit.deadlineLocal)) {
+  if (habit.deadlineLocal && !/^([0-1][0-9]|2[0-3]):([0-5][0-9])$/.test(habit.deadlineLocal)) {
     return false;
   }
   // ... more validation
@@ -170,23 +175,35 @@ function validateHabit(habit: any): boolean {
 
 ```typescript
 // Good structure
-interface HabitFormProps {
+interface QuickAddHabitProps {
   onSuccess: () => void;
-  onCancel: () => void;
 }
 
-export function HabitForm({ onSuccess, onCancel }: HabitFormProps) {
+export function QuickAddHabit({ onSuccess }: QuickAddHabitProps) {
   // 1. State
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 2. Hooks
-  const { habits } = useHabits();
+  const { refresh } = useHabits();
 
   // 3. Event handlers
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // ...
+    if (!name.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      await habitsApi.create({ name });
+      setName('');
+      refresh();
+      onSuccess();
+    } catch (err) {
+      setError('Failed to create habit');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // 4. Render
@@ -206,20 +223,28 @@ export function HabitForm({ onSuccess, onCancel }: HabitFormProps) {
 
 ```typescript
 // Good - custom hook
-function useHabitForm() {
-  const [name, setName] = useState('');
-  const [deadline, setDeadline] = useState('');
+function useHabitCompletion(habitId: string) {
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const validate = () => {
-    return name.length > 0 && deadline.length > 0;
+  const complete = async (value?: number) => {
+    setIsCompleting(true);
+    setError(null);
+    try {
+      await habitsApi.complete(habitId, { value });
+    } catch (err) {
+      setError('Failed to complete habit');
+    } finally {
+      setIsCompleting(false);
+    }
   };
 
-  return { name, setName, deadline, setDeadline, validate };
+  return { complete, isCompleting, error };
 }
 
 // Use in component
-function HabitForm() {
-  const { name, setName, deadline, setDeadline, validate } = useHabitForm();
+function ChecklistItem({ habit }: { habit: Habit }) {
+  const { complete, isCompleting, error } = useHabitCompletion(habit.id);
   // ...
 }
 ```
@@ -228,12 +253,12 @@ function HabitForm() {
 
 ```typescript
 // Good - destructure props
-function HabitCard({ habit, onUpdate }: HabitCardProps) {
+function ChecklistItem({ habit, onComplete }: ChecklistItemProps) {
   return <div>{habit.name}</div>;
 }
 
 // Bad - accessing via props object
-function HabitCard(props: HabitCardProps) {
+function ChecklistItem(props: ChecklistItemProps) {
   return <div>{props.habit.name}</div>;
 }
 ```
@@ -367,7 +392,7 @@ it('should mark habit as completed', async () => {
 // Good - describes what and when
 it('should return 404 when habit does not exist', () => {});
 it('should create backup before modifying hosts file', () => {});
-it('should reject invalid domain format', () => {});
+it('should block all configured websites when habit is incomplete', () => {});
 
 // Bad - unclear
 it('works', () => {});
@@ -399,10 +424,10 @@ it('test habit creation', () => {});
 ### Examples
 
 ```
-feat(habits): add deadline validation
+feat(habits): add data tracking support
 
-Add Zod schema validation for habit deadlines to ensure
-they are in HH:MM format and within valid time range.
+Add ability to track numeric values for habits with
+configurable units (minutes, pages, reps, etc.).
 
 Closes #123
 ```
@@ -466,8 +491,11 @@ const name = habit.name; // No need to memoize
 // Always validate user input
 const habitSchema = z.object({
   name: z.string().min(1).max(100),
-  deadlineLocal: z.string().regex(/^([0-1][0-9]|2[0-3]):([0-5][0-9])$/),
-  blockedWebsites: z.array(z.string().refine(isValidDomain)),
+  startTimeLocal: z.string().regex(/^([0-1][0-9]|2[0-3]):([0-5][0-9])$/).optional(),
+  deadlineLocal: z.string().regex(/^([0-1][0-9]|2[0-3]):([0-5][0-9])$/).optional(),
+  dataTracking: z.boolean().optional(),
+  dataUnit: z.string().max(20).optional(),
+  activeDays: z.array(z.number().min(0).max(6)).optional(),
 });
 
 const validatedData = habitSchema.parse(req.body);
@@ -520,7 +548,26 @@ function displayHabitName(name: string): string {
 <input id="habit-name" type="text" />
 
 // With ARIA when needed
-<button aria-label="Close modal" onClick={onClose}>×</button>
+<button aria-label="Close settings panel" onClick={onClose}>×</button>
+```
+
+### Keyboard Navigation
+
+```tsx
+// Good - handle keyboard events
+<div
+  role="checkbox"
+  aria-checked={isChecked}
+  tabIndex={0}
+  onKeyDown={(e) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      handleToggle();
+    }
+  }}
+  onClick={handleToggle}
+>
+  {isChecked ? '✓' : ''}
+</div>
 ```
 
 ## Resources

@@ -1,15 +1,28 @@
 # Habit Tracker with Website Blocking
 
-A habit tracking webapp that blocks specified websites when habits aren't completed by their deadlines. Uses the system hosts file for blocking, with a background service managing permissions.
+A habit tracking webapp that blocks specified websites when habits aren't completed by their deadlines. Uses the system hosts file for blocking, with a background daemon managing the enforcement.
 
 ## Features
 
-- Create daily habits with deadlines
-- Block specific websites when habits are overdue
+### Core Functionality
+- Create daily habits with optional start times and deadlines
+- Global website blocking (all configured sites blocked until habits complete)
 - Complete or skip habits with reasons
-- View habit history and statistics
+- Calendar view for tracking history
+- Graph view for data visualization
+
+### V2 Enhancements
+- **Quick Add**: Rapid habit creation from the main view
+- **Data Tracking**: Track values (minutes, pages, reps) with units
+- **Daily Checklist**: Simple checkbox-based completion
+- **Habit Settings Panel**: Configure individual habit options
+- **Global Settings**: Manage blocked websites in one place
+- **Active Days**: Set which days each habit applies
+
+### Technical Features
 - Automatic website blocking via macOS daemon
-- Timestamped backups of hosts file
+- Timestamped backups of hosts file (30-day retention)
+- Development/Production environment separation
 - Full BDD test coverage with Cucumber
 - E2E tests with Playwright
 
@@ -32,11 +45,21 @@ habit-tracker/
 │   └── planning/                  # Planning documents
 ├── packages/
 │   ├── frontend/                  # React webapp
+│   │   └── src/
+│   │       ├── components/        # UI components
+│   │       │   ├── DailyChecklist.tsx
+│   │       │   ├── CalendarView.tsx
+│   │       │   ├── GraphView.tsx
+│   │       │   └── ...
+│   │       └── pages/
+│   │           └── GlobalSettings.tsx
 │   ├── backend/                   # Express API server
 │   ├── daemon/                    # Background service for hosts file
 │   ├── shared/                    # Shared types and utilities
 │   └── e2e/                       # End-to-end tests
 ├── scripts/                       # Installation scripts
+├── .env.development               # Development config
+├── .env.production                # Production config
 └── package.json                   # Root workspace config
 ```
 
@@ -64,7 +87,6 @@ habit-tracker/
    ```bash
    cd packages/backend
    npm run db:migrate
-   npm run db:seed  # Optional: seed with sample data
    ```
 
 4. Install the daemon (requires sudo):
@@ -74,15 +96,34 @@ habit-tracker/
 
 ### Development
 
-Run all services in development mode:
+Run in **sandbox mode** (separate database for testing):
 ```bash
-npm run dev
+npm run dev:sandbox
+```
+
+This starts:
+- Frontend on http://localhost:5174
+- Backend on http://localhost:3001
+- Daemon in watch mode
+
+### Production
+
+Run in **production mode**:
+```bash
+npm run start:prod
 ```
 
 This starts:
 - Frontend on http://localhost:5173
 - Backend on http://localhost:3000
-- Daemon in watch mode
+- Daemon with production database
+
+### Environment Separation
+
+| Environment | Database Location | Backend | Frontend | Purpose |
+|-------------|-------------------|---------|----------|---------|
+| Development | `./data/dev/habit-tracker.db` | :3001 | :5174 | Sandbox testing |
+| Production | `~/.habit-tracker/data/habit-tracker.db` | :3000 | :5173 | Daily use |
 
 ### Testing
 
@@ -110,11 +151,19 @@ npm run test:bdd
 
 ## How It Works
 
-1. **Create Habits**: Define daily habits with deadlines and websites to block
-2. **Daemon Monitoring**: Background service checks habit deadlines every minute
-3. **Automatic Blocking**: When deadline passes without completion, daemon updates hosts file
-4. **Check In**: Complete or skip habits to unblock websites
-5. **Backup & Rollback**: Daemon creates timestamped backups before modifying hosts file
+1. **Create Habits**: Define daily habits with optional start times and deadlines
+2. **Configure Blocking**: Set global list of websites to block in Settings
+3. **Daemon Monitoring**: Background service checks habit status every minute
+4. **Automatic Blocking**: When start time passes, all configured sites are blocked
+5. **Complete Habits**: Check off habits to unblock (all must be complete)
+6. **Data Tracking**: Optionally track values like time spent or quantity
+
+### V2 Blocking Logic
+
+- Websites are blocked when ANY timed habit's start time passes
+- Blocking continues until ALL timed habits are completed/skipped
+- At deadline, habits are marked as "missed" (still blocking)
+- At midnight, new day starts fresh
 
 ## Database Schema
 
@@ -122,9 +171,12 @@ npm run test:bdd
 - `id`: UUID primary key
 - `name`: Habit name
 - `description`: Optional description
-- `deadlineUtc`: Deadline in UTC (HH:MM)
+- `startTimeUtc`: When blocking starts (HH:MM)
+- `deadlineUtc`: When marked as missed (HH:MM)
 - `timezoneOffset`: User's timezone offset
-- `blockedWebsites`: JSON array of domains
+- `dataTracking`: Boolean for value tracking
+- `dataUnit`: Unit for tracked values (e.g., "minutes")
+- `activeDays`: JSON array of day indices (0-6)
 - `isActive`: Boolean flag
 - `createdAt`: Creation timestamp
 
@@ -135,8 +187,14 @@ npm run test:bdd
 - `status`: 'completed' | 'skipped' | 'missed'
 - `completedAt`: Completion timestamp
 - `skipReason`: Required when status is 'skipped'
+- `value`: Tracked value (when dataTracking enabled)
 - `notes`: Optional notes
 - `createdAt`: Creation timestamp
+
+### Settings
+- `key`: Setting key (e.g., "blockedWebsites")
+- `value`: JSON value
+- `updatedAt`: Last update timestamp
 
 ## API Endpoints
 
@@ -152,17 +210,36 @@ npm run test:bdd
 - `POST /api/habits/:id/skip` - Skip habit with reason
 - `GET /api/habits/:id/logs` - Get habit history
 
+### Settings (V2)
+- `GET /api/settings` - Get global settings
+- `PUT /api/settings` - Update global settings
+- `POST /api/settings/blocked-websites` - Add blocked site
+- `DELETE /api/settings/blocked-websites` - Remove blocked site
+
 ### System
 - `GET /api/status` - Get current blocking status
-- `POST /api/daemon/sync` - Trigger daemon sync
+- `GET /health` - Server health check
+
+## Daemon Management
+
+```bash
+# Check daemon status and current blocking state
+npm run daemon:status
+
+# Restore hosts file from backup
+npm run daemon:restore
+
+# View daemon logs
+tail -f ~/.habit-tracker/logs/daemon.log
+```
 
 ## Security Considerations
 
 - Daemon runs with minimal privileges (only hosts file access)
 - Input validation on all domains
-- Rate limiting on API endpoints
-- CORS properly configured
+- CORS properly configured for localhost
 - Timestamped backups before any hosts file modification
+- 30-day backup retention
 
 ## Contributing
 
@@ -189,7 +266,19 @@ tail -f ~/.habit-tracker/logs/daemon.log
 ### Websites not blocking
 1. Verify daemon is running: `launchctl list | grep habit-tracker`
 2. Check hosts file: `cat /etc/hosts`
-3. Flush DNS cache: `dscacheutil -flushcache`
+3. Check daemon status: `npm run daemon:status`
+4. Flush DNS cache: `sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder`
+
+### Restore hosts file
+If the hosts file is corrupted:
+```bash
+npm run daemon:restore
+```
 
 ### Permission errors
 The daemon needs sudo access to modify `/etc/hosts`. You may need to grant permissions or run the installation script again.
+
+### Dev vs Prod confusion
+Check which environment you're in:
+- Dev: ports 3001/5174, database in `./data/dev/`
+- Prod: ports 3000/5173, database in `~/.habit-tracker/data/`
