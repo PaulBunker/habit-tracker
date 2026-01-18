@@ -24,8 +24,8 @@ npm run dev
 ```
 
 This runs:
-- Frontend dev server (Vite) on port 5173
-- Backend dev server (tsx watch) on port 3000
+- Frontend dev server (Vite) on port 5174
+- Backend dev server (tsx watch) on port 3001
 - Daemon in watch mode
 
 Or run services individually:
@@ -154,7 +154,7 @@ Create Playwright tests for the complete user flow:
 
 ```typescript
 test('user can register', async ({ page }) => {
-  await page.goto('http://localhost:5173/register');
+  await page.goto('http://localhost:5174/register');
   await page.fill('#name', 'John');
   await page.fill('#email', 'john@example.com');
   await page.click('button[type="submit"]');

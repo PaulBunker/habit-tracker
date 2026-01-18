@@ -20,14 +20,17 @@ Submit completed work as a pull request linked to the originating issue.
 2. **Ensure changes are committed**:
    If there are uncommitted changes, commit them with a descriptive message.
 
-3. **Push branch**:
+3. **Check for doc updates** (optional):
+   Run `/docs-check` to identify documentation that may need updates based on the changes.
+
+4. **Push branch**:
    ```bash
    git push -u origin <branch-name>
    ```
 
-4. **Extract issue number** from branch name (e.g., `issue-12-fix-bug` → `12`)
+5. **Extract issue number** from branch name (e.g., `issue-12-fix-bug` → `12`)
 
-5. **Create PR**:
+6. **Create PR**:
    ```bash
    gh pr create \
      --title "Fix #<number>: <description>" \
@@ -44,12 +47,12 @@ Submit completed work as a pull request linked to the originating issue.
    "
    ```
 
-6. **Update issue labels**:
+7. **Update issue labels**:
    ```bash
    gh issue edit <number> --add-label "status:review" --remove-label "status:in-progress"
    ```
 
-7. **Report to user**:
+8. **Report to user**:
    - PR URL
    - Issue status update confirmation
    - Any CI checks that will run
