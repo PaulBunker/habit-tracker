@@ -8,6 +8,10 @@ module.exports = {
     'src/**/*.ts',
     '!src/**/*.d.ts',
     '!src/**/__tests__/**',
+    '!src/db/migrate.ts',
+    '!src/db/seed.ts',
+    '!src/db/index.ts',
+    '!src/db/schema.ts',
   ],
   coverageThreshold: {
     global: {

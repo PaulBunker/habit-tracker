@@ -380,4 +380,225 @@ describe('Habits API (V2)', () => {
       expect(response.body.success).toBe(false);
     });
   });
+
+  describe('PUT /api/habits/:id - additional coverage', () => {
+    it('should update activeDays', async () => {
+      const createResponse = await request(app).post('/api/habits').send({
+        name: 'Weekday Habit',
+        activeDays: [1, 2, 3, 4, 5],
+      });
+
+      const habitId = createResponse.body.data.id;
+
+      const response = await request(app).put(`/api/habits/${habitId}`).send({
+        activeDays: [0, 6], // Weekend only
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.activeDays).toEqual([0, 6]);
+    });
+
+    it('should clear activeDays by setting to null', async () => {
+      const createResponse = await request(app).post('/api/habits').send({
+        name: 'Weekday Habit',
+        activeDays: [1, 2, 3, 4, 5],
+      });
+
+      const habitId = createResponse.body.data.id;
+
+      const response = await request(app).put(`/api/habits/${habitId}`).send({
+        activeDays: null,
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.activeDays).toBeUndefined();
+    });
+  });
+
+  describe('POST /api/habits/:id/complete - update existing log', () => {
+    it('should update existing log when completing same day twice', async () => {
+      const createResponse = await request(app).post('/api/habits').send({
+        name: 'Test Habit',
+      });
+
+      const habitId = createResponse.body.data.id;
+
+      // Complete first time
+      await request(app).post(`/api/habits/${habitId}/complete`).send({
+        notes: 'First completion',
+      });
+
+      // Complete second time same day - should update
+      const response = await request(app).post(`/api/habits/${habitId}/complete`).send({
+        notes: 'Updated completion',
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.notes).toBe('Updated completion');
+
+      // Verify only one log exists
+      const logsResponse = await request(app).get(`/api/habits/${habitId}/logs`);
+      expect(logsResponse.body.data).toHaveLength(1);
+    });
+  });
+
+  describe('POST /api/habits/:id/skip - update existing log', () => {
+    it('should update existing log when skipping same day twice', async () => {
+      const createResponse = await request(app).post('/api/habits').send({
+        name: 'Test Habit',
+      });
+
+      const habitId = createResponse.body.data.id;
+
+      // Skip first time
+      await request(app).post(`/api/habits/${habitId}/skip`).send({
+        skipReason: 'First reason',
+      });
+
+      // Skip second time same day - should update
+      const response = await request(app).post(`/api/habits/${habitId}/skip`).send({
+        skipReason: 'Updated reason',
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.skipReason).toBe('Updated reason');
+
+      // Verify only one log exists
+      const logsResponse = await request(app).get(`/api/habits/${habitId}/logs`);
+      expect(logsResponse.body.data).toHaveLength(1);
+    });
+  });
+
+  describe('GET /api/habits/:id/calendar', () => {
+    it('should return calendar data for habit', async () => {
+      const createResponse = await request(app).post('/api/habits').send({
+        name: 'Test Habit',
+      });
+
+      const habitId = createResponse.body.data.id;
+
+      // Complete the habit
+      await request(app).post(`/api/habits/${habitId}/complete`).send({});
+
+      const response = await request(app).get(`/api/habits/${habitId}/calendar`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].status).toBe('completed');
+    });
+
+    it('should return 404 for non-existent habit', async () => {
+      const response = await request(app).get('/api/habits/non-existent-id/calendar');
+
+      expect(response.status).toBe(404);
+    });
+
+    it('should filter by date range', async () => {
+      const createResponse = await request(app).post('/api/habits').send({
+        name: 'Test Habit',
+      });
+
+      const habitId = createResponse.body.data.id;
+
+      // Complete the habit
+      await request(app).post(`/api/habits/${habitId}/complete`).send({});
+
+      const today = new Date().toISOString().split('T')[0];
+      const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
+      // Should include today's log
+      const response = await request(app).get(
+        `/api/habits/${habitId}/calendar?start=${today}&end=${tomorrow}`
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveLength(1);
+
+      // Should exclude with future start date
+      const futureResponse = await request(app).get(
+        `/api/habits/${habitId}/calendar?start=${tomorrow}`
+      );
+
+      expect(futureResponse.status).toBe(200);
+      expect(futureResponse.body.data).toHaveLength(0);
+    });
+  });
+
+  describe('GET /api/habits/:id/graph', () => {
+    it('should return graph data for data-tracking habit', async () => {
+      const createResponse = await request(app).post('/api/habits').send({
+        name: 'Track Weight',
+        dataTracking: true,
+        dataUnit: 'lbs',
+      });
+
+      const habitId = createResponse.body.data.id;
+
+      // Complete with data value
+      await request(app).post(`/api/habits/${habitId}/complete`).send({
+        dataValue: 175.5,
+      });
+
+      const response = await request(app).get(`/api/habits/${habitId}/graph`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.unit).toBe('lbs');
+      expect(response.body.data.points).toHaveLength(1);
+      expect(response.body.data.points[0].value).toBe(175.5);
+    });
+
+    it('should return 404 for non-existent habit', async () => {
+      const response = await request(app).get('/api/habits/non-existent-id/graph');
+
+      expect(response.status).toBe(404);
+    });
+
+    it('should return 400 for non-data-tracking habit', async () => {
+      const createResponse = await request(app).post('/api/habits').send({
+        name: 'Regular Habit',
+        dataTracking: false,
+      });
+
+      const habitId = createResponse.body.data.id;
+
+      const response = await request(app).get(`/api/habits/${habitId}/graph`);
+
+      expect(response.status).toBe(400);
+    });
+
+    it('should filter by date range', async () => {
+      const createResponse = await request(app).post('/api/habits').send({
+        name: 'Track Weight',
+        dataTracking: true,
+        dataUnit: 'lbs',
+      });
+
+      const habitId = createResponse.body.data.id;
+
+      await request(app).post(`/api/habits/${habitId}/complete`).send({
+        dataValue: 175.5,
+      });
+
+      const today = new Date().toISOString().split('T')[0];
+      const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
+      // Should include today's data
+      const response = await request(app).get(
+        `/api/habits/${habitId}/graph?start=${today}&end=${tomorrow}`
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.points).toHaveLength(1);
+
+      // Should exclude with future start date
+      const futureResponse = await request(app).get(
+        `/api/habits/${habitId}/graph?start=${tomorrow}`
+      );
+
+      expect(futureResponse.status).toBe(200);
+      expect(futureResponse.body.data.points).toHaveLength(0);
+    });
+  });
 });
