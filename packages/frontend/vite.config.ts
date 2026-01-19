@@ -31,6 +31,16 @@ function versionMetaPlugin(): Plugin {
 const VITE_PORT = parseInt(process.env.VITE_PORT || '5173', 10);
 const BACKEND_PORT = process.env.PORT || '3000';
 
+// Build allowed hosts list from environment variable
+const ALLOWED_HOSTS = ['localhost'];
+if (process.env.VITE_ALLOWED_HOSTS) {
+  ALLOWED_HOSTS.push(
+    ...process.env.VITE_ALLOWED_HOSTS.split(',')
+      .map((h) => h.trim())
+      .filter(Boolean)
+  );
+}
+
 export default defineConfig({
   plugins: [react(), versionMetaPlugin()],
   test: {
@@ -41,6 +51,7 @@ export default defineConfig({
   },
   server: {
     port: VITE_PORT,
+    allowedHosts: ALLOWED_HOSTS,
     proxy: {
       '/api': {
         target: `http://localhost:${BACKEND_PORT}`,

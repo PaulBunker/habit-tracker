@@ -1,0 +1,18 @@
+# Caddyfile for local domain reverse proxy
+# Copy this file to Caddyfile and customize as needed
+#
+# Usage:
+#   cp Caddyfile.example Caddyfile
+#   caddy start --config ./Caddyfile
+#
+# See docs/LOCAL-DOMAIN-SETUP.md for full setup instructions
+
+# Production (npm run start:prod - port 5173)
+http://habbits.localhost {
+    reverse_proxy localhost:5173
+}
+
+# Development (npm run dev - port 5174)
+http://dev.habbits.localhost {
+    reverse_proxy localhost:5174
+}
