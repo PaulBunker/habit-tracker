@@ -89,6 +89,13 @@ export const habitsApi = {
     const query = params.toString() ? `?${params.toString()}` : '';
     return fetchApi<{ unit?: string; points: GraphDataPoint[] }>(`/habits/${id}/graph${query}`);
   },
+
+  async updateLogDataValue(habitId: string, date: string, dataValue: number): Promise<ApiResponse<HabitLog>> {
+    return fetchApi<HabitLog>(`/habits/${habitId}/logs/date/${date}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ dataValue }),
+    });
+  },
 };
 
 export const settingsApi = {

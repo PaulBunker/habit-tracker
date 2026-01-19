@@ -135,6 +135,20 @@ describe('API Client', () => {
 
       expect(global.fetch).toHaveBeenCalledWith('/api/habits/1/graph', expect.any(Object));
     });
+
+    it('updateLogDataValue patches log data', async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        json: () => Promise.resolve({ success: true, data: { id: 'log-1', dataValue: 180 } }),
+      } as Response);
+
+      await habitsApi.updateLogDataValue('habit-1', '2024-01-15', 180);
+
+      expect(global.fetch).toHaveBeenCalledWith('/api/habits/habit-1/logs/date/2024-01-15', {
+        method: 'PATCH',
+        body: JSON.stringify({ dataValue: 180 }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
   });
 
   describe('settingsApi', () => {

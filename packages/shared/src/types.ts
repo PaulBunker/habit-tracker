@@ -66,6 +66,10 @@ export interface SkipHabitRequest {
   notes?: string;
 }
 
+export interface UpdateHabitLogRequest {
+  dataValue: number;
+}
+
 export interface DaemonStatus {
   isRunning: boolean;
   lastCheck?: string; // ISO timestamp

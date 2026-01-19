@@ -1,10 +1,17 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Habit, GraphDataPoint } from '@habit-tracker/shared';
 import { habitsApi } from '../api/client';
 
 interface GraphViewProps {
   habit: Habit;
   onClose: () => void;
+}
+
+interface EditState {
+  point: GraphDataPoint;
+  value: string;
+  error: string;
+  saving: boolean;
 }
 
 const DATE_RANGES = [
@@ -19,6 +26,7 @@ export function GraphView({ habit, onClose }: GraphViewProps) {
   const [unit, setUnit] = useState<string | undefined>(habit.dataUnit);
   const [loading, setLoading] = useState(true);
   const [selectedRange, setSelectedRange] = useState(30);
+  const [editState, setEditState] = useState<EditState | null>(null);
 
   useEffect(() => {
     async function fetchGraphData() {
@@ -101,6 +109,45 @@ export function GraphView({ habit, onClose }: GraphViewProps) {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  const handlePointClick = useCallback((point: GraphDataPoint) => {
+    setEditState({
+      point,
+      value: point.value.toString(),
+      error: '',
+      saving: false,
+    });
+  }, []);
+
+  const handleEditCancel = useCallback(() => {
+    setEditState(null);
+  }, []);
+
+  const handleEditSave = useCallback(async () => {
+    if (!editState) return;
+
+    const numValue = parseFloat(editState.value);
+    if (isNaN(numValue) || numValue < 0) {
+      setEditState((prev) => prev ? { ...prev, error: 'Please enter a valid positive number' } : null);
+      return;
+    }
+
+    setEditState((prev) => prev ? { ...prev, saving: true, error: '' } : null);
+
+    const response = await habitsApi.updateLogDataValue(habit.id, editState.point.date, numValue);
+
+    if (response.success) {
+      // Update the graph data with the new value
+      setGraphData((prev) =>
+        prev.map((p) => (p.date === editState.point.date ? { ...p, value: numValue } : p))
+      );
+      setEditState(null);
+    } else {
+      setEditState((prev) =>
+        prev ? { ...prev, saving: false, error: response.error || 'Failed to save' } : null
+      );
+    }
+  }, [editState, habit.id]);
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal graph-modal" onClick={(e) => e.stopPropagation()}>
@@ -152,6 +199,11 @@ export function GraphView({ habit, onClose }: GraphViewProps) {
                       cy={getY(point.value)}
                       r="4"
                       fill="var(--primary-color)"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePointClick(point);
+                      }}
+                      data-testid={`graph-point-${point.date}`}
                     >
                       <title>{formatDate(point.date)}: {point.value} {unit}</title>
                     </circle>
@@ -181,6 +233,36 @@ export function GraphView({ habit, onClose }: GraphViewProps) {
           </div>
         )}
       </div>
+
+      {/* Edit Data Point Modal */}
+      {editState && (
+        <div className="data-input-overlay" onClick={handleEditCancel} data-testid="edit-modal">
+          <div className="data-input-form" onClick={(e) => e.stopPropagation()}>
+            <label>
+              Edit value for {formatDate(editState.point.date)}
+              {unit && ` (${unit})`}
+            </label>
+            <input
+              type="number"
+              value={editState.value}
+              onChange={(e) => setEditState((prev) => prev ? { ...prev, value: e.target.value, error: '' } : null)}
+              min="0"
+              step="any"
+              autoFocus
+              data-testid="edit-value-input"
+            />
+            {editState.error && <div className="error" data-testid="edit-error">{editState.error}</div>}
+            <div className="data-input-actions">
+              <button type="button" onClick={handleEditCancel} disabled={editState.saving}>
+                Cancel
+              </button>
+              <button type="submit" onClick={handleEditSave} disabled={editState.saving} data-testid="edit-save-btn">
+                {editState.saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
