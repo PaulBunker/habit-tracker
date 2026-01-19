@@ -266,8 +266,9 @@ export const settingsApi = {
   /**
    * Adds a website to the blocked list.
    *
-   * The website will be blocked (via /etc/hosts) whenever any habit
-   * with a deadline becomes overdue.
+   * When ANY habit with a deadline becomes overdue, ALL websites in the
+   * blocked list are blocked simultaneously (via /etc/hosts). Blocking
+   * continues until ALL overdue habits are completed or skipped.
    *
    * @param website - Domain to block (e.g., 'reddit.com')
    * @returns Promise with the updated blockedWebsites array

@@ -111,7 +111,7 @@ export async function pingDaemon(): Promise<boolean> {
  *
  * Use this for emergency unblocking when the user needs immediate access
  * to blocked websites. The daemon will remove all entries between the
- * `# --habit-tracker-start--` and `# --habit-tracker-end--` markers.
+ * `# HABIT-TRACKER-START` and `# HABIT-TRACKER-END` markers.
  *
  * **Warning**: This bypasses the normal blocking logic. Websites will
  * remain unblocked until the daemon's next check cycle or until
