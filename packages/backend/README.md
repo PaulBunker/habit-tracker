@@ -44,7 +44,7 @@ Express.js REST API server for the Habit Tracker application. Manages habits, lo
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/api/status` | Get daemon status |
-| `POST` | `/api/status/reset` | Emergency reset (unblock all) |
+| `POST` | `/api/daemon/reset` | Emergency reset (unblock all) |
 | `GET` | `/health` | Health check |
 
 ## Development

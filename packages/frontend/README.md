@@ -52,9 +52,6 @@ npm run build -w @habit-tracker/frontend
 
 # Run tests
 npm test -w @habit-tracker/frontend
-
-# Type check
-npm run typecheck -w @habit-tracker/frontend
 ```
 
 ## Architecture

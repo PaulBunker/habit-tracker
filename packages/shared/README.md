@@ -35,7 +35,7 @@ Shared TypeScript types and utility functions used across all Habit Tracker pack
 The daemon client is server-only and must be imported directly:
 
 ```typescript
-import { DaemonClient } from '@habit-tracker/shared/daemon-client';
+import { notifyDaemon, pingDaemon, resetHosts } from '@habit-tracker/shared/daemon-client';
 ```
 
 ## Development
@@ -46,9 +46,6 @@ npm run build -w @habit-tracker/shared
 
 # Run tests
 npm test -w @habit-tracker/shared
-
-# Type check
-npm run typecheck -w @habit-tracker/shared
 ```
 
 ## Architecture
