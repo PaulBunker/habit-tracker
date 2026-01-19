@@ -38,12 +38,15 @@ Express.js REST API server for the Habit Tracker application. Manages habits, lo
 |--------|----------|-------------|
 | `GET` | `/api/settings` | Get global settings |
 | `PUT` | `/api/settings` | Update settings |
+| `POST` | `/api/settings/blocked-websites` | Add website to blocked list |
+| `DELETE` | `/api/settings/blocked-websites` | Remove website from blocked list |
 
 ### Status
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/api/status` | Get daemon status |
+| `POST` | `/api/daemon/sync` | Trigger daemon sync |
 | `POST` | `/api/daemon/reset` | Emergency reset (unblock all) |
 | `GET` | `/health` | Health check |
 
