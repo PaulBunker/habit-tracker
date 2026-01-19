@@ -20,8 +20,9 @@ export type HabitStatus = 'completed' | 'skipped' | 'missed';
  * Represents a daily habit with optional deadline-based website blocking.
  *
  * Habits can be simple checklist items (no deadline) or enforcement habits
- * (with deadline). When a habit has a deadline and becomes overdue,
- * the daemon blocks configured websites until the habit is completed or skipped.
+ * (with deadline). When ANY habit with a deadline becomes overdue, ALL
+ * configured websites are blocked. Blocking continues until ALL overdue
+ * habits are completed or skipped.
  *
  * @example
  * ```typescript
@@ -57,7 +58,7 @@ export interface Habit {
   dataTracking: boolean;
   /** Unit label for data tracking (e.g., "lbs", "minutes", "calories") */
   dataUnit?: string;
-  /** Days of week when habit is active. 0=Sun, 1=Mon, ..., 6=Sat. Empty/null means every day. */
+  /** Days of week when habit is active. 0=Sun, 1=Mon, ..., 6=Sat. Undefined means every day. */
   activeDays?: number[];
   /** ISO 8601 timestamp when habit was created (UTC) */
   createdAt: string;
