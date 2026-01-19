@@ -10,7 +10,7 @@ Background service that enforces website blocking by managing `/etc/hosts`. Runs
 | `src/hosts-manager.ts` | `/etc/hosts` file manipulation with backup/restore |
 | `src/scheduler.ts` | Habit checking logic and deadline calculations |
 | `src/socket-server.ts` | Unix socket IPC server for backend communication |
-| `src/schema.ts` | Zod schemas for validating API responses |
+| `src/schema.ts` | Drizzle ORM database schema definitions |
 
 ## How Blocking Works
 
@@ -22,12 +22,12 @@ Background service that enforces website blocking by managing `/etc/hosts`. Runs
 The daemon modifies `/etc/hosts` with entries like:
 
 ```
-# HABIT_TRACKER_START
+# HABIT-TRACKER-START
 127.0.0.1 twitter.com
 127.0.0.1 www.twitter.com
 127.0.0.1 reddit.com
 127.0.0.1 www.reddit.com
-# HABIT_TRACKER_END
+# HABIT-TRACKER-END
 ```
 
 ## Development
@@ -72,12 +72,13 @@ The daemon listens on a Unix socket for commands from the backend:
 
 | Command | Description |
 |---------|-------------|
+| `ping` | Check if daemon is running (returns `pong`) |
 | `refresh` | Re-check habits and update blocking state |
 | `reset` | Emergency reset - unblock all websites |
 
 ## Safety Features
 
 - **Backup/Restore**: Original `/etc/hosts` backed up before modification
-- **Marker Comments**: Only modifies lines between `HABIT_TRACKER_START/END`
+- **Marker Comments**: Only modifies lines between `HABIT-TRACKER-START/END`
 - **Graceful Shutdown**: Cleans up on SIGINT/SIGTERM
 - **Error Logging**: All operations logged to `~/.habit-tracker/logs/`

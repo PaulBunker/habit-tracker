@@ -28,6 +28,9 @@ Express.js REST API server for the Habit Tracker application. Manages habits, lo
 | `POST` | `/api/habits/:id/complete` | Mark habit complete for today |
 | `POST` | `/api/habits/:id/skip` | Skip habit with reason |
 | `GET` | `/api/habits/:id/logs` | Get habit completion history |
+| `PATCH` | `/api/habits/:id/logs/date/:date` | Update log data value for specific date |
+| `GET` | `/api/habits/:id/calendar` | Get calendar view data for habit |
+| `GET` | `/api/habits/:id/graph` | Get graph data for data-tracking habits |
 
 ### Settings
 
