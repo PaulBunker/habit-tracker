@@ -1,0 +1,9 @@
+# Generated API docs (TypeDoc output)
+api/interfaces/
+api/modules/
+api/README.md
+api/.nojekyll
+
+# VitePress build output
+.vitepress/cache
+.vitepress/dist
