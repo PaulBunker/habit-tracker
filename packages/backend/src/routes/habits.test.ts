@@ -601,4 +601,139 @@ describe('Habits API (V2)', () => {
       expect(futureResponse.body.data.points).toHaveLength(0);
     });
   });
+
+  describe('PATCH /api/habits/:id/logs/date/:date', () => {
+    it('should successfully update completed log dataValue', async () => {
+      const createResponse = await request(app).post('/api/habits').send({
+        name: 'Track Weight',
+        dataTracking: true,
+        dataUnit: 'lbs',
+      });
+
+      const habitId = createResponse.body.data.id;
+
+      // Complete the habit with initial value
+      await request(app).post(`/api/habits/${habitId}/complete`).send({
+        dataValue: 175.5,
+      });
+
+      const today = new Date().toISOString().split('T')[0];
+
+      // Update the data value
+      const response = await request(app)
+        .patch(`/api/habits/${habitId}/logs/date/${today}`)
+        .send({ dataValue: 180.0 });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.dataValue).toBe(180.0);
+    });
+
+    it('should return 404 for non-existent habit', async () => {
+      const response = await request(app)
+        .patch('/api/habits/non-existent-id/logs/date/2024-01-01')
+        .send({ dataValue: 100 });
+
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+    });
+
+    it('should return 404 for date with no log', async () => {
+      const createResponse = await request(app).post('/api/habits').send({
+        name: 'Track Weight',
+        dataTracking: true,
+      });
+
+      const habitId = createResponse.body.data.id;
+
+      const response = await request(app)
+        .patch(`/api/habits/${habitId}/logs/date/2024-01-01`)
+        .send({ dataValue: 100 });
+
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toBe('No log found for this date');
+    });
+
+    it('should return 400 for non-data-tracking habit', async () => {
+      const createResponse = await request(app).post('/api/habits').send({
+        name: 'Regular Habit',
+        dataTracking: false,
+      });
+
+      const habitId = createResponse.body.data.id;
+
+      const response = await request(app)
+        .patch(`/api/habits/${habitId}/logs/date/2024-01-01`)
+        .send({ dataValue: 100 });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toBe('This habit does not have data tracking enabled');
+    });
+
+    it('should return 400 for skipped log', async () => {
+      const createResponse = await request(app).post('/api/habits').send({
+        name: 'Track Weight',
+        dataTracking: true,
+      });
+
+      const habitId = createResponse.body.data.id;
+
+      // Skip the habit
+      await request(app).post(`/api/habits/${habitId}/skip`).send({
+        skipReason: 'Feeling unwell',
+      });
+
+      const today = new Date().toISOString().split('T')[0];
+
+      const response = await request(app)
+        .patch(`/api/habits/${habitId}/logs/date/${today}`)
+        .send({ dataValue: 100 });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toBe('Can only update data value for completed logs');
+    });
+
+    it('should return 400 for invalid date format', async () => {
+      const createResponse = await request(app).post('/api/habits').send({
+        name: 'Track Weight',
+        dataTracking: true,
+      });
+
+      const habitId = createResponse.body.data.id;
+
+      const response = await request(app)
+        .patch(`/api/habits/${habitId}/logs/date/invalid-date`)
+        .send({ dataValue: 100 });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toBe('Invalid date format. Expected YYYY-MM-DD');
+    });
+
+    it('should return 400 for negative dataValue', async () => {
+      const createResponse = await request(app).post('/api/habits').send({
+        name: 'Track Weight',
+        dataTracking: true,
+      });
+
+      const habitId = createResponse.body.data.id;
+
+      // Complete the habit
+      await request(app).post(`/api/habits/${habitId}/complete`).send({
+        dataValue: 175.5,
+      });
+
+      const today = new Date().toISOString().split('T')[0];
+
+      const response = await request(app)
+        .patch(`/api/habits/${habitId}/logs/date/${today}`)
+        .send({ dataValue: -10 });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+  });
 });

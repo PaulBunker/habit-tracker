@@ -841,6 +841,15 @@
   font-weight: 600;
 }
 
+.graph-chart circle {
+  cursor: pointer;
+  transition: r 0.2s;
+}
+
+.graph-chart circle:hover {
+  r: 6;
+}
+
 /* Global Settings Page */
 .settings-page {
   max-width: 600px;

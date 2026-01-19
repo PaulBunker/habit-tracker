@@ -18,6 +18,7 @@ import {
 vi.mock('../api/client', () => ({
   habitsApi: {
     getGraph: vi.fn(),
+    updateLogDataValue: vi.fn(),
   },
 }));
 
@@ -487,6 +488,188 @@ describe('GraphView', () => {
         const title = circle?.querySelector('title');
         expect(title?.textContent).toContain('185');
         expect(title?.textContent).toContain('lbs');
+      });
+    });
+  });
+
+  describe('Edit data point', () => {
+    it('opens edit modal when clicking a data point', async () => {
+      vi.mocked(habitsApi.getGraph).mockResolvedValue({
+        success: true,
+        data: { unit: 'lbs', points: singlePointData },
+      });
+
+      const user = userEvent.setup();
+      render(<GraphView habit={mockHabit} onClose={mockOnClose} />);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      });
+
+      const point = screen.getByTestId(`graph-point-${singlePointData[0].date}`);
+      await user.click(point);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('edit-modal')).toBeInTheDocument();
+        expect(screen.getByTestId('edit-value-input')).toHaveValue(185);
+      });
+    });
+
+    it('closes edit modal when clicking cancel', async () => {
+      vi.mocked(habitsApi.getGraph).mockResolvedValue({
+        success: true,
+        data: { unit: 'lbs', points: singlePointData },
+      });
+
+      const user = userEvent.setup();
+      render(<GraphView habit={mockHabit} onClose={mockOnClose} />);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      });
+
+      const point = screen.getByTestId(`graph-point-${singlePointData[0].date}`);
+      await user.click(point);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('edit-modal')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText('Cancel'));
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('edit-modal')).not.toBeInTheDocument();
+      });
+    });
+
+    it('calls API with correct params when saving', async () => {
+      vi.mocked(habitsApi.getGraph).mockResolvedValue({
+        success: true,
+        data: { unit: 'lbs', points: singlePointData },
+      });
+      vi.mocked(habitsApi.updateLogDataValue).mockResolvedValue({
+        success: true,
+        data: { id: 'log-1', habitId: 'habit-1', date: singlePointData[0].date, status: 'completed', dataValue: 190, createdAt: '' },
+      });
+
+      const user = userEvent.setup();
+      render(<GraphView habit={mockHabit} onClose={mockOnClose} />);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      });
+
+      const point = screen.getByTestId(`graph-point-${singlePointData[0].date}`);
+      await user.click(point);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('edit-modal')).toBeInTheDocument();
+      });
+
+      const input = screen.getByTestId('edit-value-input');
+      await user.clear(input);
+      await user.type(input, '190');
+
+      await user.click(screen.getByTestId('edit-save-btn'));
+
+      await waitFor(() => {
+        expect(habitsApi.updateLogDataValue).toHaveBeenCalledWith(
+          'habit-1',
+          singlePointData[0].date,
+          190
+        );
+      });
+    });
+
+    it('updates graph after successful save', async () => {
+      vi.mocked(habitsApi.getGraph).mockResolvedValue({
+        success: true,
+        data: { unit: 'lbs', points: singlePointData },
+      });
+      vi.mocked(habitsApi.updateLogDataValue).mockResolvedValue({
+        success: true,
+        data: { id: 'log-1', habitId: 'habit-1', date: singlePointData[0].date, status: 'completed', dataValue: 190, createdAt: '' },
+      });
+
+      const user = userEvent.setup();
+      render(<GraphView habit={mockHabit} onClose={mockOnClose} />);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      });
+
+      const point = screen.getByTestId(`graph-point-${singlePointData[0].date}`);
+      await user.click(point);
+
+      const input = screen.getByTestId('edit-value-input');
+      await user.clear(input);
+      await user.type(input, '190');
+      await user.click(screen.getByTestId('edit-save-btn'));
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('edit-modal')).not.toBeInTheDocument();
+      });
+
+      // Check that the stats reflect the updated value - Latest shows the new value
+      await waitFor(() => {
+        const latestStat = screen.getByText('Latest').closest('.stat');
+        expect(latestStat?.querySelector('.stat-value')?.textContent).toContain('190');
+      });
+    });
+
+    it('displays error on failed save', async () => {
+      vi.mocked(habitsApi.getGraph).mockResolvedValue({
+        success: true,
+        data: { unit: 'lbs', points: singlePointData },
+      });
+      vi.mocked(habitsApi.updateLogDataValue).mockResolvedValue({
+        success: false,
+        error: 'Server error',
+      });
+
+      const user = userEvent.setup();
+      render(<GraphView habit={mockHabit} onClose={mockOnClose} />);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      });
+
+      const point = screen.getByTestId(`graph-point-${singlePointData[0].date}`);
+      await user.click(point);
+
+      const input = screen.getByTestId('edit-value-input');
+      await user.clear(input);
+      await user.type(input, '190');
+      await user.click(screen.getByTestId('edit-save-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('edit-error')).toHaveTextContent('Server error');
+      });
+    });
+
+    it('shows validation error for invalid input', async () => {
+      vi.mocked(habitsApi.getGraph).mockResolvedValue({
+        success: true,
+        data: { unit: 'lbs', points: singlePointData },
+      });
+
+      const user = userEvent.setup();
+      render(<GraphView habit={mockHabit} onClose={mockOnClose} />);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      });
+
+      const point = screen.getByTestId(`graph-point-${singlePointData[0].date}`);
+      await user.click(point);
+
+      const input = screen.getByTestId('edit-value-input');
+      await user.clear(input);
+      await user.type(input, '-5');
+      await user.click(screen.getByTestId('edit-save-btn'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('edit-error')).toHaveTextContent('Please enter a valid positive number');
       });
     });
   });

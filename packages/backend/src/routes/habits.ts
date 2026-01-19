@@ -42,6 +42,10 @@ const skipHabitSchema = z.object({
   notes: z.string().max(500).optional(),
 });
 
+const updateLogSchema = z.object({
+  dataValue: z.number().min(0),
+});
+
 // Helper to format habit for API response
 function formatHabitResponse(habit: typeof habits.$inferSelect) {
   return {
@@ -285,6 +289,61 @@ router.post('/:id/skip', async (req: Request, res: Response, next: NextFunction)
 
     // Fire-and-forget notification to daemon
     notifyDaemon().catch(() => {});
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * PATCH /api/habits/:id/logs/date/:date - Update habit log data value
+ */
+router.patch('/:id/logs/date/:date', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // 1. Verify habit exists
+    const [habit] = await db.select().from(habits).where(eq(habits.id, req.params.id));
+
+    if (!habit) {
+      throw new AppError(404, 'Habit not found');
+    }
+
+    // 2. Verify habit.dataTracking === true
+    if (!habit.dataTracking) {
+      throw new AppError(400, 'This habit does not have data tracking enabled');
+    }
+
+    // 3. Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(req.params.date)) {
+      throw new AppError(400, 'Invalid date format. Expected YYYY-MM-DD');
+    }
+
+    // 4. Find log by habitId + date
+    const [existingLog] = await db
+      .select()
+      .from(habitLogs)
+      .where(and(eq(habitLogs.habitId, req.params.id), eq(habitLogs.date, req.params.date)));
+
+    if (!existingLog) {
+      throw new AppError(404, 'No log found for this date');
+    }
+
+    // 5. Verify log.status === 'completed'
+    if (existingLog.status !== 'completed') {
+      throw new AppError(400, 'Can only update data value for completed logs');
+    }
+
+    // 6. Validate input with updateLogSchema
+    const validatedData = updateLogSchema.parse(req.body);
+
+    // 7. Update and return log
+    await db
+      .update(habitLogs)
+      .set({ dataValue: validatedData.dataValue })
+      .where(eq(habitLogs.id, existingLog.id));
+
+    const [updatedLog] = await db.select().from(habitLogs).where(eq(habitLogs.id, existingLog.id));
+
+    res.json({ success: true, data: updatedLog });
   } catch (error) {
     next(error);
   }
