@@ -1,0 +1,20 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "../shared/src/index.ts",
+    "../shared/src/daemon-client.ts"
+  ],
+  "out": "./api",
+  "plugin": ["typedoc-plugin-markdown"],
+  "hideBreadcrumbs": true,
+  "hideInPageTOC": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "readme": "none",
+  "entryPointStrategy": "expand",
+  "name": "Habit Tracker API",
+  "includeVersion": false,
+  "disableSources": false,
+  "tsconfig": "../shared/tsconfig.json"
+}

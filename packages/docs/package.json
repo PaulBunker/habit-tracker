@@ -1,0 +1,17 @@
+{
+  "name": "@habit-tracker/docs",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "npm run generate && vitepress build",
+    "preview": "vitepress preview",
+    "generate": "typedoc"
+  },
+  "devDependencies": {
+    "typedoc": "^0.25.7",
+    "typedoc-plugin-markdown": "^3.17.1",
+    "vitepress": "^1.0.0-rc.42"
+  }
+}
