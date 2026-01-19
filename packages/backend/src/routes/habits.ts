@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
 import { db } from '../db';
 import { habits, habitLogs } from '../db/schema';
-import { eq, and, desc, gte, lte } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { localTimeToUtc, utcTimeToLocal, getCurrentDateUtc } from '@habit-tracker/shared';
 import { notifyDaemon } from '@habit-tracker/shared/daemon-client';
 import { z } from 'zod';
@@ -100,7 +100,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validatedData = createHabitSchema.parse(req.body);
 
-    const newHabit = {
+    const newHabit: typeof habits.$inferSelect = {
       id: randomUUID(),
       name: validatedData.name,
       description: validatedData.description || null,
@@ -112,11 +112,12 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       dataUnit: validatedData.dataUnit || null,
       activeDays: validatedData.activeDays ? JSON.stringify(validatedData.activeDays) : null,
       isActive: true,
+      createdAt: new Date().toISOString(),
     };
 
     await db.insert(habits).values(newHabit);
 
-    res.status(201).json({ success: true, data: formatHabitResponse(newHabit as any) });
+    res.status(201).json({ success: true, data: formatHabitResponse(newHabit) });
 
     // Fire-and-forget notification to daemon
     notifyDaemon().catch(() => {});
@@ -387,7 +388,7 @@ router.get('/:id/calendar', async (req: Request, res: Response, next: NextFuncti
     const startDate = req.query.start as string | undefined;
     const endDate = req.query.end as string | undefined;
 
-    let query = db
+    const query = db
       .select({
         date: habitLogs.date,
         status: habitLogs.status,
