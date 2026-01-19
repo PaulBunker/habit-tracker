@@ -1,0 +1,19 @@
+# Caddy reverse proxy for local domain development
+#
+# Setup:
+#   1. Install Caddy: brew install caddy
+#   2. Add to /etc/hosts:
+#      127.0.0.1 habbits.localhost dev.habbits.localhost
+#   3. Run: caddy run --config Caddyfile
+#
+# Then access:
+#   http://habbits.localhost     -> production frontend (port 5173)
+#   http://dev.habbits.localhost -> development frontend (port 5174)
+
+http://habbits.localhost {
+    reverse_proxy localhost:5173
+}
+
+http://dev.habbits.localhost {
+    reverse_proxy localhost:5174
+}
