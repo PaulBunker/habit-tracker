@@ -80,7 +80,26 @@ gh issue create \
 
 ## Proposed Approach
 <High-level plan to fix or investigate>
-<Files likely to be affected>
+
+### Files to create/modify:
+- `path/to/file.ts` (new or modify)
+
+<If creating directory structures, use a code block:>
+\`\`\`
+packages/example/
+├── config.ts
+├── index.ts
+└── utils/
+\`\`\`
+
+<If adding scripts to package.json, show them:>
+\`\`\`json
+{
+  \"scripts\": {
+    \"example\": \"command here\"
+  }
+}
+\`\`\`
 
 ## Acceptance Criteria
 - [ ] <How we'll know it's resolved>
@@ -103,6 +122,7 @@ Report:
 - **Be specific in acceptance criteria**: Make it testable
 - **Prefer `ai:ready`**: Only use `ai:needs-breakdown` if truly too large
 - **Ask before creating**: If uncertain about anything, clarify first
+- **Use code blocks for scannability**: When creating new directories, adding scripts, or showing config snippets, use fenced code blocks - they're easier to read than prose
 
 ## Example
 
