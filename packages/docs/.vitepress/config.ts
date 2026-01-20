@@ -35,14 +35,7 @@ export default defineConfig({
             { text: 'System Design', link: '/guide/architecture' },
           ],
         },
-        {
-          text: 'Development',
-          items: [
-            { text: 'Testing', link: '/guide/testing' },
-            { text: 'Coding Standards', link: '/guide/coding-standards' },
-          ],
-        },
-        {
+                {
           text: 'Operations',
           items: [
             { text: 'Deployment', link: '/guide/deployment' },

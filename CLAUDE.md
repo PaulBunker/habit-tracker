@@ -67,12 +67,15 @@ npm run daemon:restore
 
 ## Coding Standards
 
-- **TypeScript strict mode** - no `any`, explicit return types
-- **TDD/BDD approach** - write tests first
-- **Naming**: camelCase (vars/functions), PascalCase (components/types), UPPER_SNAKE_CASE (constants)
-- **Booleans**: prefix with `is`, `has`, `should`, `can`
-- **File naming**: kebab-case (dirs), PascalCase (React components)
-- **Commit format**: `<type>(<scope>): <subject>` (feat, fix, docs, refactor, test, chore)
+**Enforced by ESLint** - run `npm run lint` to check:
+- No `any` type (error)
+- Explicit return types (warn)
+- Naming conventions: camelCase (vars/functions), PascalCase (types), UPPER_SNAKE_CASE (constants)
+
+**Conventions**:
+- Booleans: prefix with `is`, `has`, `should`, `can`
+- File naming: kebab-case (dirs), PascalCase (React components)
+- Commit format: `<type>(<scope>): <subject>` (feat, fix, docs, refactor, test, chore)
 
 ## Environment Separation
 
@@ -91,18 +94,6 @@ npm run daemon:restore
 
 ## Documentation
 
-This project uses **docs-as-code**: documentation lives in `packages/docs/` as markdown files built with VitePress.
-
-**Source files** (read these directly):
-- `packages/docs/guide/` - Setup, architecture, testing, deployment, coding standards
-- `packages/docs/api/` - Generated from TSDoc comments (run `npm run docs:generate` first)
-- Each package has its own `README.md` with package-specific details
-
-**To preview as a website**: `npm run docs:dev` (builds TypeDoc API docs then starts VitePress)
-
-## Documentation-First Workflow
-
-1. **Check docs first** - Read CLAUDE.md, README.md, and `packages/docs/guide/` before starting
-2. **Keep docs current** - Update when adding features, changing setup, or discovering conventions
-3. **Ask before assuming** - Clarify when requirements are ambiguous, multiple approaches exist, or decisions are hard to reverse
-4. **Plan before executing** - Outline approach, reference patterns, flag deviations
+- **This file (CLAUDE.md)** - Primary reference for AI assistants
+- **Package READMEs** - Each package has its own README.md
+- **VitePress site** - `npm run docs:dev` for browsable docs with API reference

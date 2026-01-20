@@ -119,10 +119,10 @@ You should see periodic "Checking habits..." messages every 60 seconds, plus ins
    ```
    Expected output:
    ```
-   # BEGIN HABIT-TRACKER BLOCK
+   # HABIT-TRACKER-START
    127.0.0.1 example.com
    127.0.0.1 www.example.com
-   # END HABIT-TRACKER BLOCK
+   # HABIT-TRACKER-END
    ```
 
 5. **Test blocking works:**
@@ -187,7 +187,7 @@ If websites are blocked and you need to unblock immediately:
 npm run daemon:restore
 
 # Or manually
-sudo sed -i '' '/# BEGIN HABIT-TRACKER BLOCK/,/# END HABIT-TRACKER BLOCK/d' /etc/hosts
+sudo sed -i '' '/# HABIT-TRACKER-START/,/# HABIT-TRACKER-END/d' /etc/hosts
 ```
 
 ## Troubleshooting
