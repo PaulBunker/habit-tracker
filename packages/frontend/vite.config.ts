@@ -28,6 +28,19 @@ function versionMetaPlugin(): Plugin {
   };
 }
 
+function faviconPlugin(): Plugin {
+  const favicon = NODE_ENV === 'production' ? '/favicon-prod.svg' : '/favicon-dev.svg';
+  return {
+    name: 'favicon-env',
+    transformIndexHtml(html) {
+      return html.replace(
+        /<link rel="icon" type="image\/svg\+xml" href="[^"]*" \/>/,
+        `<link rel="icon" type="image/svg+xml" href="${favicon}" />`
+      );
+    },
+  };
+}
+
 const VITE_PORT = parseInt(process.env.VITE_PORT || '5173', 10);
 const BACKEND_PORT = process.env.PORT || '3000';
 
@@ -42,7 +55,7 @@ if (process.env.VITE_ALLOWED_HOSTS) {
 }
 
 export default defineConfig({
-  plugins: [react(), versionMetaPlugin()],
+  plugins: [react(), versionMetaPlugin(), faviconPlugin()],
   test: {
     globals: true,
     environment: 'jsdom',
