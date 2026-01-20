@@ -145,7 +145,7 @@ npm run test:bdd
 
 - [Setup Guide](./docs/workflows/setup-guide.md)
 - [Development Workflow](./docs/workflows/development-workflow.md)
-- [API Documentation](./docs/architecture/api-documentation.md)
+- [API Reference](./packages/docs/api/) - Generated from TypeDoc
 - [Testing Guide](./docs/workflows/testing-guide.md)
 - [System Architecture](./docs/architecture/system-design.md)
 
