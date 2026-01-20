@@ -4,6 +4,9 @@ export default defineConfig({
   title: 'Habit Tracker',
   description: 'A macOS app that blocks websites when daily habits are not completed',
 
+  // Base path for GitHub Pages deployment
+  base: '/habit-tracker/',
+
   // Map TypeDoc's README.md to index for VitePress
   rewrites: {
     'api/README.md': 'api/index.md',
