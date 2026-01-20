@@ -33,6 +33,19 @@ export default defineConfig({
           ],
         },
         {
+          text: 'Development',
+          items: [
+            { text: 'Testing', link: '/guide/testing' },
+            { text: 'Coding Standards', link: '/guide/coding-standards' },
+          ],
+        },
+        {
+          text: 'Operations',
+          items: [
+            { text: 'Deployment', link: '/guide/deployment' },
+          ],
+        },
+        {
           text: 'Packages',
           items: [
             { text: 'Shared', link: '/guide/shared' },

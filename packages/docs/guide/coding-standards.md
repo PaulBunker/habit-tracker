@@ -569,10 +569,3 @@ function displayHabitName(name: string): string {
   {isChecked ? '✓' : ''}
 </div>
 ```
-
-## Resources
-
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-- [React Best Practices](https://react.dev/)
-- [Clean Code by Robert C. Martin](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)
-- [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript)
