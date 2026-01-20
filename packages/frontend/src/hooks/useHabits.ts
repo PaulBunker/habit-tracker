@@ -1,7 +1,38 @@
+/**
+ * React hooks for habit data management.
+ *
+ * @packageDocumentation
+ */
+
 import { useState, useEffect, useCallback } from 'react';
 import type { Habit } from '@habit-tracker/shared';
 import { habitsApi } from '../api/client';
 
+/**
+ * Hook for fetching and managing the habits list.
+ *
+ * Provides habits data, loading state, error handling, and a refresh function.
+ * Automatically fetches habits on mount.
+ *
+ * @returns Object containing habits array, loading state, error message, and refresh function
+ *
+ * @example
+ * ```tsx
+ * function HabitsList() {
+ *   const { habits, loading, error, refresh } = useHabits();
+ *
+ *   if (loading) return <Spinner />;
+ *   if (error) return <Error message={error} />;
+ *
+ *   return (
+ *     <>
+ *       <button onClick={refresh}>Refresh</button>
+ *       {habits.map(h => <HabitItem key={h.id} habit={h} />)}
+ *     </>
+ *   );
+ * }
+ * ```
+ */
 export function useHabits() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
