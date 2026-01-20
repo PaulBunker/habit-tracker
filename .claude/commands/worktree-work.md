@@ -5,162 +5,141 @@ args: issue_number
 
 # Worktree Workflow
 
-Isolated parallel development using git worktrees. Enables multiple Claude sessions to work on different issues simultaneously without conflicts.
+**PURPOSE**: Create an isolated worktree for parallel development on GitHub issue #$ARGUMENTS.
 
-## Arguments
+---
 
-- `issue_number` (required): The GitHub issue number to work on
+## STEP 1: Validate Issue [EXECUTE NOW]
 
-## Phase 1: Setup Worktree
+Run this command to get the issue details:
 
-1. **Validate the issue exists**:
-   ```bash
-   gh issue view $ARGUMENTS --json title,number,state
-   ```
-   Extract the title for branch naming.
+```bash
+gh issue view $ARGUMENTS --json title,number,state
+```
 
-2. **Generate branch/worktree name**:
-   Format: `issue-<number>-<slug>` where slug is 2-4 words from the title in kebab-case.
-   Example: `issue-28-favicon-colors`
+**If the command fails**: Stop and tell the user the issue doesn't exist.
 
-3. **Check for existing worktree**:
-   ```bash
-   git worktree list | grep "issue-$ARGUMENTS"
-   ```
-   If exists, report its location and skip creation.
+**If successful**: Extract the title and proceed.
 
-4. **Create the worktree**:
-   ```bash
-   git worktree add ../habit-tracker-worktrees/issue-<number>-<slug> -b issue-<number>-<slug>
-   ```
-   Creates both the worktree directory and branch.
+---
 
-5. **Setup the environment**:
-   ```bash
-   cd ../habit-tracker-worktrees/issue-<number>-<slug>
-   ```
-   Then follow CLAUDE.md for:
-   - Installing dependencies
-   - Build order (check "Build & Development Commands" and "Common Issues" sections)
+## STEP 2: Generate Branch Name [EXECUTE NOW]
 
-6. **Configure ports** (to avoid conflicts with main workspace):
-   Create `.env.local` in the worktree root:
-   ```bash
-   cat > .env.local << 'EOF'
-   PORT=3002
-   VITE_PORT=5175
-   VITE_API_URL=http://localhost:3002
-   EOF
-   ```
+Create a slug from the issue title:
+- Take 2-4 key words from the title
+- Convert to lowercase kebab-case
+- Format: `issue-$ARGUMENTS-<slug>`
 
-   For additional worktrees, increment ports (3003/5176, 3004/5177, etc.).
+**Examples**:
+- "Add environment-specific favicons" → `issue-28-favicon-colors`
+- "Fix authentication redirect bug" → `issue-42-auth-redirect-bug`
+- "Update API documentation for v2" → `issue-15-api-docs-v2`
 
-7. **Output instructions to user**:
-   ```
-   Worktree created at: ../habit-tracker-worktrees/issue-<number>-<slug>
+---
 
-   To start working:
-   1. Open a new terminal
-   2. cd <full-path-to-worktree>
-   3. Run: claude
-   4. In that session: /start-task <issue_number>
+## STEP 3: Check for Existing Worktree [EXECUTE NOW]
 
-   Dev server: npm run dev (ports 3002/5175)
-   ```
+```bash
+git worktree list | grep "issue-$ARGUMENTS"
+```
 
-## Phase 2: Working in the Worktree
+**If a worktree already exists**: Report its path and STOP here. Tell the user to `cd` to that path and run `claude`.
 
-Once in the worktree with a new Claude session:
+**If no worktree exists**: Proceed to Step 4.
 
-1. **Start the task**: Run `/start-task <issue_number>`
-   - This updates labels, analyzes the issue, creates implementation plan
+---
 
-2. **Follow TDD approach** per CLAUDE.md:
-   - Write failing tests first
-   - Implement to make tests pass
-   - Refactor while keeping tests green
+## STEP 4: Create the Worktree [EXECUTE NOW - CRITICAL]
 
-3. **Commit changes regularly** with descriptive messages
+⚠️ **YOU MUST RUN THIS COMMAND** - do not skip or describe it:
 
-4. **Run tests before finalizing**:
-   ```bash
-   npm test
-   npm run lint
-   ```
+```bash
+git worktree add ../habit-tracker-worktrees/issue-<NUMBER>-<SLUG> -b issue-<NUMBER>-<SLUG>
+```
 
-## Phase 3: Create PR
+Replace `<NUMBER>` and `<SLUG>` with actual values from Steps 1-2.
 
-1. **Create the PR**: Run `/create-pr`
-   - Pushes branch, creates PR linked to issue
-   - Updates issue labels to `status:review`
+---
 
-2. **Request code review** (optional): Run `/code-review <pr_number>`
-   - Gets AI code review of the PR changes
+## STEP 5: Verify Creation [EXECUTE NOW]
 
-3. **Address feedback**, commit fixes, push updates
+Run this command to confirm the worktree was created:
 
-## Phase 4: Cleanup (After PR Merged)
+```bash
+git worktree list
+```
 
-Run these commands from the **main workspace** (not the worktree):
+**Expected output**: Should show the new worktree path.
 
-1. **Fetch latest and verify merge**:
-   ```bash
-   git fetch origin
-   git log --oneline origin/master | head -5
-   ```
+**If verification fails**:
+1. Check if the parent directory exists: `ls -la ../`
+2. Try creating it: `mkdir -p ../habit-tracker-worktrees`
+3. Retry Step 4
 
-2. **Update issue status**:
-   ```bash
-   gh issue edit <number> --add-label "status:done" --remove-label "status:review"
-   ```
+---
 
-3. **Remove the worktree**:
-   ```bash
-   git worktree remove ../habit-tracker-worktrees/issue-<number>-<slug>
-   ```
+## STEP 6: Configure Ports [EXECUTE NOW]
 
-4. **Delete the branch** (if fully merged):
-   ```bash
-   git branch -d issue-<number>-<slug>
-   ```
+Create `.env.local` in the worktree to avoid port conflicts:
 
-5. **Confirm cleanup**:
-   ```bash
-   git worktree list
-   ```
-   Should show only the main worktree.
+```bash
+cat > ../habit-tracker-worktrees/issue-<NUMBER>-<SLUG>/.env.local << 'EOF'
+PORT=3002
+VITE_PORT=5175
+VITE_API_URL=http://localhost:3002
+EOF
+```
 
-## Integration with Existing Skills
+For additional worktrees, increment: 3003/5176, 3004/5177, etc.
 
-| Skill | When to Use |
-|-------|-------------|
-| `/start-task` | Run inside worktree to begin work |
-| `/create-pr` | Create PR from worktree branch |
-| `/code-review` | Review the PR (requires code-review skill) |
-| `/check-tasks` | Find available issues before starting |
-| `/docs-check` | Check if docs need updates |
+---
 
-## Important Notes
+## STEP 7: Output Instructions and STOP [FINAL STEP]
 
-### Dependencies & Build
-Each worktree needs its own dependency installation and build. Refer to CLAUDE.md sections:
-- "Build & Development Commands" for install/build steps
-- "Common Issues" for build order requirements
+Print these instructions to the user, then **STOP EXECUTION**:
 
-### Port Conflicts
-Default dev ports (3001/5174) will conflict if running multiple workspaces. Use `.env.local` overrides:
-- Worktree 1: 3002/5175
-- Worktree 2: 3003/5176
-- etc.
+```
+✅ Worktree created successfully!
 
-### Database Isolation
-Dev mode uses a relative database path (`./packages/backend/data/dev/`), so each worktree has its own isolated database.
+📁 Location: ../habit-tracker-worktrees/issue-<NUMBER>-<SLUG>
+🌿 Branch: issue-<NUMBER>-<SLUG>
 
-### New Claude Session Required
-Worktrees are separate directories. You must:
-1. `cd` to the worktree directory
-2. Start a fresh `claude` session
-3. That session's context will be the worktree
+TO START WORKING:
+1. Open a NEW terminal window
+2. Run: cd <FULL_PATH_TO_WORKTREE>
+3. Run: npm install && npm run build
+4. Run: claude
+5. In the new Claude session, run: /start-task $ARGUMENTS
 
-### Worktree Location
-All worktrees are created in `../habit-tracker-worktrees/` relative to the main repo. This keeps them siblings to the main workspace for easy navigation.
+⚠️  Do NOT continue working in this session.
+    The new worktree needs its own Claude session with fresh context.
+```
+
+**Replace placeholders** with actual values before outputting.
+
+---
+
+## Reference: Cleanup (After PR Merged)
+
+Run from the **main workspace** after the PR is merged:
+
+```bash
+# Remove worktree
+git worktree remove ../habit-tracker-worktrees/issue-<NUMBER>-<SLUG>
+
+# Delete branch (if fully merged)
+git branch -d issue-<NUMBER>-<SLUG>
+
+# Verify cleanup
+git worktree list
+```
+
+---
+
+## Reference: Related Skills
+
+| Skill | Use In New Session |
+|-------|-------------------|
+| `/start-task $ARGUMENTS` | Begin work on the issue |
+| `/create-pr` | Create PR when work is complete |
+| `/code-review <pr>` | Review the PR |
