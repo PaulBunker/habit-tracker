@@ -6,7 +6,7 @@ const HOSTS_FILE = '/etc/hosts';
 test.describe('Website Blocking Flow', () => {
   test('should block websites when habit deadline passes', async ({ page }) => {
     // Create a habit with deadline in the past
-    await page.goto('http://localhost:5173');
+    await page.goto('/');
     await page.click('button:has-text("Create New Habit")');
 
     await page.fill('input#name', 'Overdue Habit');
@@ -19,7 +19,7 @@ test.describe('Website Blocking Flow', () => {
     await expect(page.locator('.habit-card:has-text("Overdue Habit")')).toBeVisible();
 
     // Trigger daemon sync
-    await fetch('http://localhost:3000/api/daemon/sync', { method: 'POST' });
+    await fetch('http://localhost:3001/api/daemon/sync', { method: 'POST' });
 
     // Wait for daemon to process
     await page.waitForTimeout(3000);
@@ -27,7 +27,7 @@ test.describe('Website Blocking Flow', () => {
     // Check hosts file (note: this requires appropriate permissions)
     // In a real test environment, you might mock this or run with sudo
     // For now, we'll just verify the API response
-    const statusResponse = await fetch('http://localhost:3000/api/status');
+    const statusResponse = await fetch('http://localhost:3001/api/status');
     const statusData = await statusResponse.json();
 
     // Verify that blocking is active (this is a placeholder)
@@ -42,7 +42,7 @@ test.describe('Website Blocking Flow', () => {
     // 4. Complete the habit
     // 5. Verify sites are unblocked
 
-    await page.goto('http://localhost:5173');
+    await page.goto('/');
 
     // For testing purposes, we'll just verify the completion flow
     // A full integration test would require time mocking or waiting
