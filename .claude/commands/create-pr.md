@@ -47,18 +47,27 @@ Submit completed work as a pull request linked to the originating issue.
    "
    ```
 
-7. **Update issue labels**:
+7. **Run code review**: `/code-review <pr_number>`
+
+8. **If issues found - fix and re-review**:
+   - Fix the issues identified
+   - Commit and push: `git add -A && git commit -m "fix: address code review feedback" && git push`
+   - Re-run: `/code-review <pr_number>`
+   - **Repeat until no issues found**
+
+9. **Update issue labels** (only after code review passes):
    ```bash
    gh issue edit <number> --add-label "status:review" --remove-label "status:in-progress"
    ```
 
-8. **Report to user**:
-   - PR URL
-   - Issue status update confirmation
-   - Any CI checks that will run
+10. **Report to user**:
+    - PR URL
+    - Code review result (passed/issues fixed)
+    - Issue status update confirmation
 
 ## Notes
 
 - PR title should reference the issue number with "Fix #N:" or "Closes #N:"
 - The PR body should include "Closes #N" to auto-close the issue on merge
 - If tests exist, ensure they pass before creating PR
+- **Do NOT merge until code review passes with no issues**

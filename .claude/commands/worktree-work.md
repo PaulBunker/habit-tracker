@@ -146,25 +146,31 @@ Run the agent and wait for it to return the PR URL (or error details).
 
 ---
 
-## Phase 3: Code Review
+## Phase 3: Code Review Loop
 
 After the agent returns with PR URL:
 
 1. Extract PR number from URL
-2. Use the `/code-review` skill or spawn another agent to review:
+2. Run `/code-review <pr_number>`
 
-```bash
-gh pr view <pr_number> --json number,title,body,files
-gh pr diff <pr_number>
-```
+### If issues found:
 
-Review for:
-- CLAUDE.md compliance
-- Test coverage
-- Code quality
-- Security issues
+1. **Fix the issues** in the worktree:
+   ```bash
+   cd <worktree_path>
+   # Make fixes
+   git add -A
+   git commit -m "fix: address code review feedback"
+   git push
+   ```
 
-Add review comments to the PR if issues found.
+2. **Re-run code review**: `/code-review <pr_number>`
+
+3. **Repeat until no issues found** - do NOT merge until code review passes
+
+### If no issues found:
+
+Proceed to Phase 4.
 
 ---
 
