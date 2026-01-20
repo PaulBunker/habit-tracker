@@ -15,14 +15,14 @@ Work on documentation issues from the Documentation-as-Code project (#34-44).
 All docs work happens on a feature branch with sub-branches per issue:
 
 ```
-main
+master
   └── feature/docs-as-code (base)
         ├── feature/docs-as-code/issue-34 → PR to feature branch
         ├── feature/docs-as-code/issue-35 → PR to feature branch
         └── ... each issue reviewed before merging
 ```
 
-When the project is complete, `feature/docs-as-code` gets PR'd to `main`.
+When the project is complete, `feature/docs-as-code` gets PR'd to `master`.
 
 ## Process
 
@@ -42,28 +42,34 @@ gh issue view $ARGUMENTS
 
 ### 2. Set Up Branches
 
-Ensure the base feature branch exists:
+**First, ensure master is up to date:**
+
+```bash
+git fetch origin
+git checkout master
+git pull origin master
+```
+
+**Ensure the feature branch exists and is rebased on master:**
 
 ```bash
 # Check if feature branch exists
-git fetch origin
-if ! git show-ref --verify --quiet refs/heads/feature/docs-as-code; then
-  # Create from main
-  git checkout main
-  git pull origin main
+if git show-ref --verify --quiet refs/remotes/origin/feature/docs-as-code; then
+  # Feature branch exists - checkout and rebase onto master
+  git checkout feature/docs-as-code
+  git rebase master
+  git push --force-with-lease origin feature/docs-as-code
+else
+  # Create from master
   git checkout -b feature/docs-as-code
   git push -u origin feature/docs-as-code
 fi
 ```
 
-Create a sub-branch for this issue:
+**Create a sub-branch for this issue:**
 
 ```bash
-# Checkout and update base feature branch
-git checkout feature/docs-as-code
-git pull origin feature/docs-as-code
-
-# Create sub-branch
+# Create sub-branch from the updated feature branch
 git checkout -b feature/docs-as-code/issue-<number>
 ```
 
@@ -309,11 +315,11 @@ npm run docs:dev
 - [ ] Mobile responsive (resize browser)
 - [ ] No console errors
 
-### Create Final PR to Main
+### Create Final PR to Master
 
 ```bash
 gh pr create \
-  --base main \
+  --base master \
   --title "Documentation-as-Code: Complete docs overhaul" \
   --body "## Summary
 Complete documentation restructuring including:
@@ -358,7 +364,7 @@ Closes #39"
 ## Notes
 
 - **#34 is first**: Sets up infrastructure before other issues can verify docs generation
-- **PRs go to feature branch**: Not main! This allows review per issue
+- **PRs go to feature branch**: Not master! This allows review per issue
 - **Manual verification is required**: Actually look at the docs site
 - **Run /code-review**: Don't skip the automated review
 - **Update issue status**: Keep the project board accurate
