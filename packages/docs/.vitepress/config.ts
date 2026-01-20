@@ -23,6 +23,7 @@ export default defineConfig({
           items: [
             { text: 'Introduction', link: '/guide/' },
             { text: 'Setup', link: '/guide/setup' },
+            { text: 'Local Domains', link: '/guide/local-domains' },
           ],
         },
         {
