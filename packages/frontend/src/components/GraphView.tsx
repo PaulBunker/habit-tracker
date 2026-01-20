@@ -1,19 +1,38 @@
+/**
+ * Graph visualization component for data-tracking habits.
+ *
+ * @packageDocumentation
+ */
+
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Habit, GraphDataPoint } from '@habit-tracker/shared';
 import { habitsApi } from '../api/client';
 
+/**
+ * Props for the GraphView component.
+ */
 interface GraphViewProps {
+  /** The habit to display graph data for (must have dataTracking enabled) */
   habit: Habit;
+  /** Callback to close the graph modal */
   onClose: () => void;
 }
 
+/**
+ * Internal state for editing a data point.
+ */
 interface EditState {
+  /** The data point being edited */
   point: GraphDataPoint;
+  /** Current value in the input field */
   value: string;
+  /** Validation or API error message */
   error: string;
+  /** Whether a save operation is in progress */
   saving: boolean;
 }
 
+/** Available date range options for the graph view */
 const DATE_RANGES = [
   { label: '7 Days', days: 7 },
   { label: '30 Days', days: 30 },
@@ -21,6 +40,34 @@ const DATE_RANGES = [
   { label: 'All Time', days: 0 },
 ];
 
+/**
+ * Renders an SVG line graph showing progress over time for data-tracking habits.
+ *
+ * Displays recorded values as an interactive line chart with clickable points
+ * for editing values. Includes date range selection (7/30/90 days or all time),
+ * y-axis labels with units, and summary statistics (latest, average, count).
+ *
+ * @param props - Component props
+ * @returns The rendered graph modal
+ *
+ * @example
+ * ```tsx
+ * function HabitDetail({ habit }: { habit: Habit }) {
+ *   const [showGraph, setShowGraph] = useState(false);
+ *
+ *   if (!habit.dataTracking) return null;
+ *
+ *   return (
+ *     <>
+ *       <button onClick={() => setShowGraph(true)}>View Graph</button>
+ *       {showGraph && (
+ *         <GraphView habit={habit} onClose={() => setShowGraph(false)} />
+ *       )}
+ *     </>
+ *   );
+ * }
+ * ```
+ */
 export function GraphView({ habit, onClose }: GraphViewProps) {
   const [graphData, setGraphData] = useState<GraphDataPoint[]>([]);
   const [unit, setUnit] = useState<string | undefined>(habit.dataUnit);

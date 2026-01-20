@@ -48,7 +48,7 @@ npm run daemon:restore
 - **shared** - TypeScript types and utilities (dual CJS/ESM build, must build first)
 - **backend** - Express API server with SQLite (Drizzle ORM)
 - **frontend** - React + Vite webapp
-- **daemon** - Background service that receives IPC triggers from backend, 30s fallback poll, and modifies `/etc/hosts`
+- **daemon** - Background service that receives IPC triggers from backend, 60s fallback poll, and modifies `/etc/hosts`
 
 **Data Flow**: User → Frontend → Backend API → SQLite ← Daemon → /etc/hosts
 
@@ -67,12 +67,15 @@ npm run daemon:restore
 
 ## Coding Standards
 
-- **TypeScript strict mode** - no `any`, explicit return types
-- **TDD/BDD approach** - write tests first
-- **Naming**: camelCase (vars/functions), PascalCase (components/types), UPPER_SNAKE_CASE (constants)
-- **Booleans**: prefix with `is`, `has`, `should`, `can`
-- **File naming**: kebab-case (dirs), PascalCase (React components)
-- **Commit format**: `<type>(<scope>): <subject>` (feat, fix, docs, refactor, test, chore)
+**Enforced by ESLint** - run `npm run lint` to check:
+- No `any` type (error)
+- Explicit return types (warn)
+- Naming conventions: camelCase (vars/functions), PascalCase (types), UPPER_SNAKE_CASE (constants)
+
+**Conventions**:
+- Booleans: prefix with `is`, `has`, `should`, `can`
+- File naming: kebab-case (dirs), PascalCase (React components)
+- Commit format: `<type>(<scope>): <subject>` (feat, fix, docs, refactor, test, chore)
 
 ## Environment Separation
 
@@ -89,9 +92,8 @@ npm run daemon:restore
 - **Tests fail** - Ensure shared package is built
 - **Daemon not blocking** - Check `tail -f ~/.habit-tracker/logs/daemon.log`
 
-## Documentation-First Workflow
+## Documentation
 
-1. **Check docs first** - Read CLAUDE.md, README.md, relevant /docs before starting
-2. **Keep docs current** - Update when adding features, changing setup, or discovering conventions
-3. **Ask before assuming** - Clarify when requirements are ambiguous, multiple approaches exist, or decisions are hard to reverse
-4. **Plan before executing** - Outline approach, reference patterns, flag deviations
+- **This file (CLAUDE.md)** - Primary reference for AI assistants
+- **Package READMEs** - Each package has its own README.md
+- **VitePress site** - `npm run docs:dev` for browsable docs with API reference

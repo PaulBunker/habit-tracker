@@ -1,14 +1,47 @@
+/**
+ * Individual habit item component for the daily checklist.
+ *
+ * @packageDocumentation
+ */
+
 import { useState } from 'react';
 import type { Habit, HabitLog } from '@habit-tracker/shared';
 import { habitsApi } from '../api/client';
 
+/**
+ * Props for the ChecklistItem component.
+ */
 interface ChecklistItemProps {
+  /** The habit to display */
   habit: Habit;
+  /** Today's log entry for this habit (if one exists) */
   todayLog?: HabitLog;
+  /** Callback when the habit status changes (completed/skipped) */
   onUpdate: () => void;
+  /** Callback to open the settings panel for this habit */
   onOpenSettings: (habit: Habit) => void;
 }
 
+/**
+ * Renders a single habit item in the daily checklist.
+ *
+ * Displays the habit name, deadline, completion status, and data value (if applicable).
+ * Handles checkbox interaction for completing habits, including showing a data input
+ * modal for habits with data tracking enabled.
+ *
+ * @param props - Component props
+ * @returns The rendered checklist item
+ *
+ * @example
+ * ```tsx
+ * <ChecklistItem
+ *   habit={habit}
+ *   todayLog={logs[habit.id]}
+ *   onUpdate={() => refetchLogs()}
+ *   onOpenSettings={(h) => setSelectedHabit(h)}
+ * />
+ * ```
+ */
 export function ChecklistItem({ habit, todayLog, onUpdate, onOpenSettings }: ChecklistItemProps) {
   const [dataValue, setDataValue] = useState('');
   const [showDataInput, setShowDataInput] = useState(false);

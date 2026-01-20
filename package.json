@@ -23,7 +23,11 @@
     "daemon:restore": "bash scripts/restore-hosts.sh",
     "db:cleanup-test-data": "bash scripts/cleanup-test-data.sh",
     "install:production": "bash scripts/install-production.sh",
-    "uninstall:production": "bash scripts/uninstall-production.sh"
+    "uninstall:production": "bash scripts/uninstall-production.sh",
+    "docs:dev": "npm run dev -w @habit-tracker/docs",
+    "docs:build": "npm run build -w @habit-tracker/docs",
+    "docs:generate": "npm run generate -w @habit-tracker/docs",
+    "docs:preview": "npm run preview -w @habit-tracker/docs"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",

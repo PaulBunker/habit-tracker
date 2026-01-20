@@ -1,7 +1,44 @@
+/**
+ * React hook for fetching today's habit logs.
+ *
+ * @packageDocumentation
+ */
+
 import { useState, useEffect, useCallback } from 'react';
 import type { HabitLog } from '@habit-tracker/shared';
 import { habitsApi } from '../api/client';
 
+/**
+ * Hook for fetching today's completion logs for multiple habits.
+ *
+ * Fetches logs in parallel for all provided habit IDs and returns a map
+ * of habit ID to today's log (if one exists). Automatically refetches
+ * when the habit IDs change.
+ *
+ * @param habitIds - Array of habit UUIDs to fetch logs for
+ * @returns Object containing logs map, loading state, and refresh function
+ *
+ * @example
+ * ```tsx
+ * function DailyView() {
+ *   const { habits } = useHabits();
+ *   const habitIds = habits.map(h => h.id);
+ *   const { logs, loading, refresh } = useTodayLogs(habitIds);
+ *
+ *   if (loading) return <Spinner />;
+ *
+ *   return habits.map(habit => (
+ *     <ChecklistItem
+ *       key={habit.id}
+ *       habit={habit}
+ *       todayLog={logs[habit.id]}
+ *       onUpdate={refresh}
+ *       onOpenSettings={(h) => console.log('Settings for:', h.name)}
+ *     />
+ *   ));
+ * }
+ * ```
+ */
 export function useTodayLogs(habitIds: string[]) {
   const [logs, setLogs] = useState<Record<string, HabitLog | undefined>>({});
   const [loading, setLoading] = useState(true);
