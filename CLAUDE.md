@@ -48,7 +48,7 @@ npm run daemon:restore
 - **shared** - TypeScript types and utilities (dual CJS/ESM build, must build first)
 - **backend** - Express API server with SQLite (Drizzle ORM)
 - **frontend** - React + Vite webapp
-- **daemon** - Background service that receives IPC triggers from backend, 30s fallback poll, and modifies `/etc/hosts`
+- **daemon** - Background service that receives IPC triggers from backend, 60s fallback poll, and modifies `/etc/hosts`
 
 **Data Flow**: User → Frontend → Backend API → SQLite ← Daemon → /etc/hosts
 

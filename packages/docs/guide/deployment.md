@@ -103,7 +103,7 @@ The `app-version` should match the git commit hash that was deployed. You can al
 tail -f ~/.habit-tracker/logs/daemon.log
 ```
 
-You should see periodic "Checking habits..." messages every 30 seconds, plus instant refresh messages when habits are completed.
+You should see periodic "Checking habits..." messages every 60 seconds, plus instant refresh messages when habits are completed.
 
 ## Testing Hosts File Blocking
 
@@ -111,7 +111,7 @@ You should see periodic "Checking habits..." messages every 30 seconds, plus ins
 
 2. **Add blocked websites** in Settings (e.g., `example.com`)
 
-3. **Changes apply instantly** (or within 30 seconds if daemon is recovering)
+3. **Changes apply instantly** (or within 60 seconds if daemon is recovering)
 
 4. **Verify hosts file has blocked entries:**
    ```bash
@@ -133,7 +133,7 @@ You should see periodic "Checking habits..." messages every 30 seconds, plus ins
 
 6. **Complete all habits** in the UI
 
-7. **Verify unblocked instantly** (or within 30 seconds):
+7. **Verify unblocked instantly** (or within 60 seconds):
    ```bash
    cat /etc/hosts | grep HABIT-TRACKER
    ```
@@ -258,6 +258,67 @@ To open Habit Tracker automatically when Chrome starts:
 
 - **Backend** runs as a standalone Node.js process serving the API
 - **Frontend** uses Vite's preview server to serve the built static files
-- **Daemon** receives instant refresh signals from backend via Unix socket at `~/.habit-tracker/daemon.sock`, with 30-second fallback polling for time-based triggers
+- **Daemon** receives instant refresh signals from backend via Unix socket at `~/.habit-tracker/daemon.sock`, with 60-second fallback polling for time-based triggers
 - All three services share the same SQLite database at `~/.habit-tracker/data/habit-tracker.db`
 - Environment variable `NODE_ENV=production` ensures proper database path defaults
+
+## System Modifications Reference
+
+The production installation modifies the following system locations:
+
+### Hosts File (`/etc/hosts`)
+
+Blocked websites are added between markers:
+```
+# HABIT-TRACKER-START
+127.0.0.1 reddit.com
+127.0.0.1 www.reddit.com
+# HABIT-TRACKER-END
+```
+
+Manual cleanup:
+```bash
+sudo sed -i '' '/# HABIT-TRACKER-START/,/# HABIT-TRACKER-END/d' /etc/hosts
+```
+
+### Sudoers Entry (`/etc/sudoers.d/habit-tracker`)
+
+Allows passwordless sudo for specific daemon operations:
+```
+<username> ALL=(ALL) NOPASSWD: /bin/cp /tmp/habit-tracker-hosts-temp /etc/hosts
+<username> ALL=(ALL) NOPASSWD: /usr/bin/killall -HUP mDNSResponder
+```
+
+View or remove:
+```bash
+sudo cat /etc/sudoers.d/habit-tracker
+sudo rm /etc/sudoers.d/habit-tracker
+```
+
+### LaunchAgents (`~/Library/LaunchAgents/`)
+
+Three plist files control the services:
+- `com.habit-tracker.backend.plist`
+- `com.habit-tracker.frontend.plist`
+- `com.habit-tracker.daemon.plist`
+
+### Unix Socket (`~/.habit-tracker/daemon.sock`)
+
+IPC protocol for backend → daemon communication:
+
+| Command | Response | Description |
+|---------|----------|-------------|
+| `ping` | `pong` | Health check |
+| `refresh` | `ok` | Trigger immediate habit check |
+| `reset` | `ok` | Emergency unblock all |
+
+Test manually:
+```bash
+echo "ping" | nc -U ~/.habit-tracker/daemon.sock
+```
+
+### Temporary Files
+
+| Path | Purpose |
+|------|---------|
+| `/tmp/habit-tracker-hosts-temp` | Staging file before sudo cp to /etc/hosts |

@@ -46,6 +46,7 @@ export default defineConfig({
           text: 'Operations',
           items: [
             { text: 'Deployment', link: '/guide/deployment' },
+            { text: 'Troubleshooting', link: '/guide/troubleshooting' },
           ],
         },
         {

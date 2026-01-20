@@ -41,7 +41,7 @@ Express API server providing REST endpoints:
 
 - `/api/habits` - CRUD operations for habits
 - `/api/habits/:id/logs` - Habit completion logging
-- `/api/blocked-sites` - Website blocklist management
+- `/api/settings/blocked-websites` - Website blocklist management
 - `/api/settings` - Application settings
 
 ### Frontend Package
@@ -57,6 +57,6 @@ React application with Vite:
 Background service responsibilities:
 
 - Receives IPC triggers from backend
-- 30-second fallback polling
+- 60-second fallback polling
 - Modifies `/etc/hosts` for blocking
 - Runs with elevated privileges
