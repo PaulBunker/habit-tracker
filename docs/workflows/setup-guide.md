@@ -466,7 +466,7 @@ After successful setup:
 1. **Read the docs:**
    - [Development Workflow](./development-workflow.md)
    - [Testing Guide](./testing-guide.md)
-   - [API Documentation](../architecture/api-documentation.md)
+   - [API Reference](../../packages/docs/api/) - Generated from TypeDoc
 
 2. **Explore the code:**
    - Start with `packages/backend/src/server.ts`
