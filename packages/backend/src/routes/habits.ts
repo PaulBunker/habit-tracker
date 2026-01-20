@@ -75,7 +75,7 @@ function formatHabitResponse(habit: typeof habits.$inferSelect) {
 /**
  * GET /api/habits
  *
- * Retrieves all active habits ordered by creation date.
+ * Retrieves all active habits.
  *
  * @returns {ApiResponse<Habit[]>} Array of active habit objects
  *
