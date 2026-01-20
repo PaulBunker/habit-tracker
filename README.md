@@ -34,7 +34,7 @@ For production deployment, see the [Deployment Guide](https://paulbunker.github.
 
 | Section | Description |
 |---------|-------------|
-| [Guide](https://paulbunker.github.io/habit-tracker/guide/) | Setup, architecture, testing, deployment |
+| [Guide](https://paulbunker.github.io/habit-tracker/guide/) | Setup, architecture, deployment, troubleshooting |
 | [API Reference](https://paulbunker.github.io/habit-tracker/api/) | TypeDoc-generated from source |
 | [CLAUDE.md](./CLAUDE.md) | AI assistant instructions |
 
@@ -79,7 +79,7 @@ npm run daemon:restore  # Emergency unblock all websites
 
 ## Contributing
 
-This project follows TDD/BDD practices. See [Coding Standards](https://paulbunker.github.io/habit-tracker/guide/coding-standards) and [Testing Guide](https://paulbunker.github.io/habit-tracker/guide/testing).
+This project follows TDD/BDD practices. Run `npm run lint` to check code style (ESLint enforces naming conventions and no `any` types).
 
 ## License
 
