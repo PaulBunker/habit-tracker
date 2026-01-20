@@ -1,14 +1,44 @@
 # Caddy reverse proxy for local domain development
+# ==================================================
 #
-# Setup:
+# Access the app via clean URLs instead of localhost:PORT
+#
+# QUICK START
+# -----------
 #   1. Install Caddy: brew install caddy
+#
 #   2. Add to /etc/hosts:
 #      127.0.0.1 habbits.localhost dev.habbits.localhost
-#   3. Run: caddy run --config Caddyfile
 #
-# Then access:
-#   http://habbits.localhost     -> production frontend (port 5173)
-#   http://dev.habbits.localhost -> development frontend (port 5174)
+#   3. Configure VITE_ALLOWED_HOSTS in your .env files:
+#      .env.development:  VITE_ALLOWED_HOSTS=dev.habbits.localhost
+#      .env.production:   VITE_ALLOWED_HOSTS=habbits.localhost
+#
+#   4. Start Caddy: caddy run --config Caddyfile
+#
+#   5. Start the app (npm run dev or npm run start:prod)
+#
+# ACCESS
+# ------
+#   http://habbits.localhost     -> production (port 5173)
+#   http://dev.habbits.localhost -> development (port 5174)
+#
+# TLD RECOMMENDATIONS
+# -------------------
+#   .localhost  - Recommended, works in all browsers
+#   .test       - Good alternative
+#   .local      - Works but may conflict with mDNS/Bonjour
+#   .dev        - AVOID! Browsers force HTTPS (Google owns .dev TLD)
+#
+# TROUBLESHOOTING
+# ---------------
+#   "Site can't be reached" -> Check Caddy is running: lsof -i :80
+#   "Invalid Host header"   -> Add domain to VITE_ALLOWED_HOSTS
+#   "Connection refused"    -> Start the Vite server
+#
+#   Flush DNS cache: sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+#
+# Full documentation: packages/docs/guide/local-domains.md
 
 http://habbits.localhost {
     reverse_proxy localhost:5173
