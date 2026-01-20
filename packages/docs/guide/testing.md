@@ -697,11 +697,3 @@ test('slow operation', async () => {
   // ...
 }, 10000); // 10 second timeout
 ```
-
-## Resources
-
-- [Jest Documentation](https://jestjs.io/)
-- [Vitest Documentation](https://vitest.dev/)
-- [Playwright Documentation](https://playwright.dev/)
-- [Cucumber Documentation](https://cucumber.io/docs/cucumber/)
-- [React Testing Library](https://testing-library.com/react)

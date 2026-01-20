@@ -205,5 +205,5 @@ New files created:
 - packages/shared/src/daemon-client.ts
 - scripts/install-production.sh
 - scripts/uninstall-production.sh
-- docs/workflows/deployment-guide.md
+- docs/workflows/deployment-guide.md (migrated to packages/docs/guide/deployment.md)
 - docs/PRODUCTION-STATE.md (this file)

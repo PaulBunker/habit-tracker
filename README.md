@@ -143,11 +143,16 @@ npm run test:bdd
 
 ## Documentation
 
-- [Setup Guide](./docs/workflows/setup-guide.md)
-- [Development Workflow](./docs/workflows/development-workflow.md)
-- [API Reference](./packages/docs/api/) - Generated from TypeDoc
-- [Testing Guide](./docs/workflows/testing-guide.md)
-- [System Architecture](./docs/architecture/system-design.md)
+Full documentation is available at `packages/docs/`. Build and view locally:
+
+```bash
+npm run docs:dev    # Start dev server at http://localhost:5173
+npm run docs:build  # Build static site
+```
+
+Key sections:
+- **Guide** (`/guide/`) - Setup, architecture, testing, deployment, and coding standards
+- **API Reference** (`/api/`) - TypeDoc-generated from TSDoc comments
 
 ## How It Works
 

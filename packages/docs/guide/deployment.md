@@ -1,4 +1,4 @@
-# Production Deployment Guide
+# Production Deployment
 
 This guide explains how to deploy the Habit Tracker to production on macOS, ensuring all services persist across laptop restarts.
 
@@ -79,7 +79,7 @@ Expected: `{"status":"ok","timestamp":"..."}`
 
 ### Check Frontend
 
-Open http://localhost:5173 in your browser.
+Open `http://localhost:5173` in your browser.
 
 ### Verify Deployed Version
 
@@ -239,7 +239,7 @@ Setting Chrome to open the Habit Tracker creates a helpful workflow: when a bloc
 
 The simplest approach is to bookmark the Habit Tracker:
 
-1. Open http://localhost:5173 in Chrome
+1. Open `http://localhost:5173` in Chrome
 2. Press **⌘D** (or click the star in the address bar)
 3. Save to **Bookmarks bar** for easy access
 
