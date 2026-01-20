@@ -89,9 +89,19 @@ npm run daemon:restore
 - **Tests fail** - Ensure shared package is built
 - **Daemon not blocking** - Check `tail -f ~/.habit-tracker/logs/daemon.log`
 
+## Documentation
+
+Full documentation is available at **https://paulbunker.github.io/habit-tracker/** (or run `npm run docs:dev` locally).
+
+Key resources:
+- **[Guide](https://paulbunker.github.io/habit-tracker/guide/)** - Setup, architecture, testing, deployment
+- **[API Reference](https://paulbunker.github.io/habit-tracker/api/)** - TypeDoc-generated from TSDoc comments
+
+For comprehensive information about a topic, check the docs site first.
+
 ## Documentation-First Workflow
 
-1. **Check docs first** - Read CLAUDE.md, README.md, relevant /docs before starting
+1. **Check docs first** - Read CLAUDE.md, README.md, and the [docs site](https://paulbunker.github.io/habit-tracker/) before starting
 2. **Keep docs current** - Update when adding features, changing setup, or discovering conventions
 3. **Ask before assuming** - Clarify when requirements are ambiguous, multiple approaches exist, or decisions are hard to reverse
 4. **Plan before executing** - Outline approach, reference patterns, flag deviations

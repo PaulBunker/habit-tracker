@@ -143,7 +143,9 @@ npm run test:bdd
 
 ## Documentation
 
-Full documentation is available at `packages/docs/`. Build and view locally:
+📖 **[View Documentation](https://paulbunker.github.io/habit-tracker/)** - Full docs hosted on GitHub Pages
+
+Or build and view locally:
 
 ```bash
 npm run docs:dev    # Start dev server at http://localhost:5173
@@ -151,8 +153,8 @@ npm run docs:build  # Build static site
 ```
 
 Key sections:
-- **Guide** (`/guide/`) - Setup, architecture, testing, deployment, and coding standards
-- **API Reference** (`/api/`) - TypeDoc-generated from TSDoc comments
+- **[Guide](https://paulbunker.github.io/habit-tracker/guide/)** - Setup, architecture, testing, deployment, and coding standards
+- **[API Reference](https://paulbunker.github.io/habit-tracker/api/)** - TypeDoc-generated from TSDoc comments
 
 ## How It Works
 
