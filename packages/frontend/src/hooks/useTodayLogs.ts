@@ -28,11 +28,12 @@ import { habitsApi } from '../api/client';
  *   if (loading) return <Spinner />;
  *
  *   return habits.map(habit => (
- *     <HabitItem
+ *     <ChecklistItem
  *       key={habit.id}
  *       habit={habit}
  *       todayLog={logs[habit.id]}
- *       onComplete={refresh}
+ *       onUpdate={refresh}
+ *       onOpenSettings={(h) => console.log('Settings for:', h.name)}
  *     />
  *   ));
  * }
