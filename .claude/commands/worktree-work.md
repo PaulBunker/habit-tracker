@@ -119,7 +119,21 @@ npm run build
 
    🤖 Generated with Claude Code"
 
-6. **Return the PR URL** when complete.
+6. **Return the PR URL** when complete, or return error details if blocked.
+
+## Error Handling
+
+If any step fails:
+- **npm install/build fails**: Check for missing dependencies, run `npm run build -w @habit-tracker/shared` first
+- **Tests fail**: Fix the failing tests before proceeding. Do not skip tests.
+- **Lint fails**: Fix lint errors. Do not use eslint-disable without justification.
+- **PR creation fails**: Check if branch was pushed, verify gh auth status
+- **Blocked by unclear requirements**: Return with specific questions for the user
+
+If unrecoverable, return:
+- What was completed
+- What failed and why
+- Suggested next steps
 
 ## Important
 
@@ -128,7 +142,7 @@ npm run build
 - Follow CLAUDE.md conventions in the worktree
 ```
 
-Run the agent and wait for it to return the PR URL.
+Run the agent and wait for it to return the PR URL (or error details).
 
 ---
 
@@ -154,35 +168,15 @@ Add review comments to the PR if issues found.
 
 ---
 
-## Phase 4: Cleanup
+## Phase 4: Update Status
 
-After PR is created and reviewed:
-
-### 4.1 Update issue labels
+After PR is created and reviewed, update issue labels:
 
 ```bash
 gh issue edit $ARGUMENTS --add-label "status:review" --remove-label "status:in-progress"
 ```
 
-### 4.2 Remove worktree
-
-```bash
-git worktree remove ../habit-tracker-worktrees/issue-<number>-<slug>
-```
-
-### 4.3 Optionally delete local branch
-
-Only if user requests or PR is merged:
-
-```bash
-git branch -d issue-<number>-<slug>
-```
-
-### 4.4 Verify cleanup
-
-```bash
-git worktree list
-```
+**Do NOT remove the worktree yet.** Keep it for addressing review feedback.
 
 ---
 
@@ -192,4 +186,36 @@ Report to user:
 - PR URL
 - Code review summary
 - Any issues or blockers found
-- Cleanup status
+- Worktree location (for follow-up work)
+
+---
+
+## Reference: Cleanup (After PR Merged)
+
+Run from the **main workspace** after the PR is merged:
+
+### Remove worktree
+
+```bash
+git worktree remove ../habit-tracker-worktrees/issue-<number>-<slug>
+```
+
+### Delete local branch
+
+```bash
+git branch -d issue-<number>-<slug>
+```
+
+### Update issue status
+
+```bash
+gh issue edit <number> --add-label "status:done" --remove-label "status:review"
+```
+
+### Verify cleanup
+
+```bash
+git worktree list
+```
+
+Should show only the main worktree.
