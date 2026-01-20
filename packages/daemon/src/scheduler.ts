@@ -10,7 +10,7 @@ import os from 'os';
 /**
  * Expand ~ to user's home directory
  */
-function expandHome(filePath: string): string {
+export function expandHome(filePath: string): string {
   if (filePath.startsWith('~')) {
     return path.join(os.homedir(), filePath.slice(1));
   }
@@ -20,7 +20,7 @@ function expandHome(filePath: string): string {
 /**
  * Resolve path relative to monorepo root (INIT_CWD) for relative paths
  */
-function resolveDbPath(rawPath: string): string {
+export function resolveDbPath(rawPath: string): string {
   // Expand home directory
   const expanded = expandHome(rawPath);
   // If it's a relative path and INIT_CWD is set (npm workspace), resolve from monorepo root
@@ -65,7 +65,7 @@ function getCurrentDayOfWeek(): number {
 /**
  * Check if a habit is active today based on activeDays
  */
-function isHabitActiveToday(habit: typeof habits.$inferSelect): boolean {
+export function isHabitActiveToday(habit: typeof habits.$inferSelect): boolean {
   if (!habit.activeDays) {
     return true; // Active every day if not specified
   }
@@ -77,14 +77,14 @@ function isHabitActiveToday(habit: typeof habits.$inferSelect): boolean {
 /**
  * Check if a habit has a deadline (only habits with deadlines can block)
  */
-function hasDeadline(habit: typeof habits.$inferSelect): boolean {
+export function hasDeadline(habit: typeof habits.$inferSelect): boolean {
   return !!habit.deadlineUtc;
 }
 
 /**
  * Check if a habit is overdue (past its deadline)
  */
-function isOverdue(habit: typeof habits.$inferSelect, currentTime: string): boolean {
+export function isOverdue(habit: typeof habits.$inferSelect, currentTime: string): boolean {
   if (habit.deadlineUtc) {
     return currentTime >= habit.deadlineUtc;
   }
