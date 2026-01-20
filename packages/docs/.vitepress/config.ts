@@ -32,6 +32,15 @@ export default defineConfig({
             { text: 'System Design', link: '/guide/architecture' },
           ],
         },
+        {
+          text: 'Packages',
+          items: [
+            { text: 'Shared', link: '/guide/shared' },
+            { text: 'Backend', link: '/guide/backend' },
+            { text: 'Frontend', link: '/guide/frontend' },
+            { text: 'Daemon', link: '/guide/daemon' },
+          ],
+        },
       ],
       '/api/': [
         {
