@@ -63,6 +63,29 @@ habit-tracker/
 └── package.json                   # Root workspace config
 ```
 
+## Documentation
+
+📚 **Full documentation is available at the [docs site](./packages/docs/).**
+
+To build and view locally:
+```bash
+npm run docs:dev    # Start dev server at http://localhost:5173
+npm run docs:build  # Build static site
+```
+
+### Documentation includes:
+
+| Section | Description |
+|---------|-------------|
+| [Guide](./packages/docs/guide/) | Setup, configuration, and development workflow |
+| [API Reference](./packages/docs/api/) | TypeDoc-generated reference for types and utilities |
+| [Architecture](./packages/docs/guide/architecture.md) | System design and data flow |
+| [Package Guides](./packages/docs/guide/) | Per-package documentation (backend, frontend, daemon, shared) |
+
+> **For AI assistants**: Comprehensive documentation is generated from TSDoc comments. See `npm run docs:dev` output for all available pages.
+
+---
+
 ## Quick Start
 
 ### Prerequisites
@@ -140,14 +163,6 @@ npm run test:e2e
 # Run BDD tests
 npm run test:bdd
 ```
-
-## Documentation
-
-- [Setup Guide](./docs/workflows/setup-guide.md)
-- [Development Workflow](./docs/workflows/development-workflow.md)
-- [API Reference](./packages/docs/api/) - Generated from TypeDoc
-- [Testing Guide](./docs/workflows/testing-guide.md)
-- [System Architecture](./docs/architecture/system-design.md)
 
 ## How It Works
 

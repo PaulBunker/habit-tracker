@@ -89,9 +89,22 @@ npm run daemon:restore
 - **Tests fail** - Ensure shared package is built
 - **Daemon not blocking** - Check `tail -f ~/.habit-tracker/logs/daemon.log`
 
+## Documentation
+
+Full documentation is available at `packages/docs/`. Build and view locally:
+
+```bash
+npm run docs:dev    # Start dev server at http://localhost:5173
+npm run docs:build  # Build static site
+```
+
+Key sections:
+- **Guide** (`/guide/`) - Setup, architecture, and package-specific docs
+- **API Reference** (`/api/`) - TypeDoc-generated from TSDoc comments
+
 ## Documentation-First Workflow
 
-1. **Check docs first** - Read CLAUDE.md, README.md, relevant /docs before starting
+1. **Check docs first** - Read CLAUDE.md, README.md, and run `npm run docs:dev` for full context
 2. **Keep docs current** - Update when adding features, changing setup, or discovering conventions
 3. **Ask before assuming** - Clarify when requirements are ambiguous, multiple approaches exist, or decisions are hard to reverse
 4. **Plan before executing** - Outline approach, reference patterns, flag deviations
