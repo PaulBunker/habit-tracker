@@ -33,7 +33,7 @@ import { habitsApi } from '../api/client';
  *       habit={habit}
  *       todayLog={logs[habit.id]}
  *       onUpdate={refresh}
- *       onOpenSettings={(h) => console.log('Settings for:', h.name)}
+ *       onOpenSettings={(h, rect) => console.log('Settings for:', h.name, rect)}
  *     />
  *   ));
  * }

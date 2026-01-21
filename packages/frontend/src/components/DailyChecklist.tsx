@@ -47,7 +47,7 @@ interface DailyChecklistProps {
  *       habits={habits}
  *       todayLogs={logs}
  *       onUpdate={handleUpdate}
- *       onOpenSettings={(h) => openSettingsPanel(h)}
+ *       onOpenSettings={(h, rect) => openSettingsPanel(h, rect)}
  *     />
  *   );
  * }

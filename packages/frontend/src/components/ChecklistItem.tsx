@@ -38,7 +38,7 @@ interface ChecklistItemProps {
  *   habit={habit}
  *   todayLog={logs[habit.id]}
  *   onUpdate={() => refetchLogs()}
- *   onOpenSettings={(h) => setSelectedHabit(h)}
+ *   onOpenSettings={(h, rect) => handleOpenSettings(h, rect)}
  * />
  * ```
  */
