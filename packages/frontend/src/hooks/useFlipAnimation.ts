@@ -6,9 +6,9 @@ import { useLayoutEffect, useState, useRef, type RefObject } from 'react';
 export interface FlipConfig {
   /** The source element's bounding rect (captured on click) */
   sourceRect: DOMRect | null;
-  /** Animation duration in milliseconds (default: 300) */
+  /** Animation duration in milliseconds (default: 450) */
   duration?: number;
-  /** CSS easing function (default: cubic-bezier(0.2, 0, 0.2, 1)) */
+  /** CSS easing function (default: cubic-bezier(0, 0, 0.21, 1)) */
   easing?: string;
 }
 
@@ -20,9 +20,9 @@ interface FlipAnimationResult {
   isAnimating: boolean;
 }
 
-const DEFAULT_DURATION = 300;
-const DEFAULT_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)'; // Material Design "Emphasized Decelerate"
-const MIN_SCALE = 0.1;
+const DEFAULT_DURATION = 450;
+// Smooth deceleration curve - starts fast, ends very smooth
+const DEFAULT_EASING = 'cubic-bezier(0, 0, 0.21, 1)';
 
 /**
  * Checks if the user prefers reduced motion
@@ -33,23 +33,15 @@ function prefersReducedMotion(): boolean {
 }
 
 /**
- * Hook that implements F.L.I.P. (First, Last, Invert, Play) animation.
+ * Hook that implements F.L.I.P. animation using clip-path for card-to-modal transitions.
  *
- * F.L.I.P. technique:
- * 1. First: Capture source element's position (sourceRect)
- * 2. Last: Element is rendered at final position (targetRef)
- * 3. Invert: Apply transform to make element appear at source position
- * 4. Play: Animate transform to none
+ * This approach avoids content distortion by using clip-path instead of scale.
+ * The modal is always full-sized in the DOM, but clipped to appear as the card,
+ * then the clip animates to reveal the full modal.
  *
  * @param targetRef - Ref to the target element (e.g., modal)
  * @param config - Animation configuration
  * @returns Object containing isAnimating state
- *
- * @example
- * ```tsx
- * const modalRef = useRef<HTMLDivElement>(null);
- * const { isAnimating } = useFlipAnimation(modalRef, { sourceRect });
- * ```
  */
 export function useFlipAnimation(
   targetRef: RefObject<HTMLElement | null>,
@@ -57,7 +49,6 @@ export function useFlipAnimation(
 ): FlipAnimationResult {
   const { sourceRect, duration = DEFAULT_DURATION, easing = DEFAULT_EASING } = config;
   const [isAnimating, setIsAnimating] = useState(false);
-  // Track if animation has been initialized to prevent React Strict Mode double-execution
   const hasInitialized = useRef(false);
 
   useLayoutEffect(() => {
@@ -75,65 +66,62 @@ export function useFlipAnimation(
     }
     hasInitialized.current = true;
 
-    // Get the target element's final position
+    // Get the modal's final position (centered by flexbox)
     const targetRect = element.getBoundingClientRect();
 
-    // Calculate the transform needed to position element at source location
+    // Calculate the translation needed to move modal's top-left to source's top-left
     const deltaX = sourceRect.left - targetRect.left;
     const deltaY = sourceRect.top - targetRect.top;
 
-    // Calculate scale, clamped to minimum
-    const scaleX = Math.max(MIN_SCALE, sourceRect.width / targetRect.width);
-    const scaleY = Math.max(MIN_SCALE, sourceRect.height / targetRect.height);
+    // Calculate clip-path insets to clip modal to source card size
+    // inset(top right bottom left) - distances from each edge
+    // We want to show only a sourceRect-sized portion starting from top-left
+    const clipTop = 0;
+    const clipLeft = 0;
+    const clipRight = Math.max(0, targetRect.width - sourceRect.width);
+    const clipBottom = Math.max(0, targetRect.height - sourceRect.height);
 
-    // Set up the animation
+    // Get the border-radius of the source card for smooth transition
+    const borderRadius = 8; // Match card border-radius
+
     setIsAnimating(true);
 
-    // Step 1: Apply initial transform (Invert) - position at source
-    element.style.transformOrigin = 'top left';
-    element.style.willChange = 'transform';
-    element.style.transition = 'none'; // Disable transitions for initial state
-    element.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${scaleX}, ${scaleY})`;
+    // Step 1: Apply initial state - position at source and clip to source size
+    element.style.willChange = 'transform, clip-path';
+    element.style.transition = 'none';
+    element.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+    element.style.clipPath = `inset(${clipTop}px ${clipRight}px ${clipBottom}px ${clipLeft}px round ${borderRadius}px)`;
 
-    // Force browser to paint the initial state before animating
-    // This is critical - without it, the browser may batch the transform changes
+    // Force browser to paint the initial state
     element.getBoundingClientRect();
 
-    // Step 2: Use double RAF to ensure browser has painted initial state
-    // First RAF: schedules work for next frame
-    // Second RAF: ensures paint has occurred
+    // Step 2: Animate to final state
     const rafId = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        element.style.transitionProperty = 'transform';
-        element.style.transitionDuration = `${duration}ms`;
-        element.style.transitionTimingFunction = easing;
+        // Enable transitions
+        element.style.transition = `transform ${duration}ms ${easing}, clip-path ${duration}ms ${easing}`;
+        // Animate to final position and reveal full modal
         element.style.transform = 'none';
+        element.style.clipPath = 'inset(0 round 12px)'; // Match modal border-radius
       });
     });
 
     // Step 3: Clean up after animation completes
-    // Add extra buffer for the double RAF delay (~32ms) plus animation duration
     const timeoutId = setTimeout(() => {
-      element.style.willChange = 'auto';
+      element.style.willChange = '';
       element.style.transition = '';
-      element.style.transitionProperty = '';
-      element.style.transitionDuration = '';
-      element.style.transitionTimingFunction = '';
+      element.style.clipPath = '';
       setIsAnimating(false);
-    }, duration + 100); // Buffer for double RAF + animation
+    }, duration + 50);
 
     return () => {
       cancelAnimationFrame(rafId);
       clearTimeout(timeoutId);
-      // Reset element styles so next effect run sees clean state
+      // Reset element styles for next effect run
       element.style.transform = '';
       element.style.transition = '';
       element.style.willChange = '';
-      element.style.transformOrigin = '';
-      element.style.transitionProperty = '';
-      element.style.transitionDuration = '';
-      element.style.transitionTimingFunction = '';
-      // Reset for next animation
+      element.style.clipPath = '';
       hasInitialized.current = false;
     };
   }, [sourceRect, duration, easing, targetRef]);

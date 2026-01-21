@@ -37,5 +37,6 @@ body {
     transition: none !important;
     will-change: auto !important;
     transform: none !important;
+    clip-path: none !important;
   }
 }

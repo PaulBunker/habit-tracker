@@ -978,13 +978,12 @@
   margin-bottom: 0;
 }
 
-/* F.L.I.P. Animation */
+/* F.L.I.P. Animation (clip-path based) */
 .flip-animating {
-  will-change: transform;
-  transform-origin: top left;
+  will-change: transform, clip-path;
 }
 
 .modal.flip-animating {
-  /* Prevent layout shift during animation */
-  contain: layout;
+  /* Ensure modal stays above other content during animation */
+  z-index: 1001;
 }

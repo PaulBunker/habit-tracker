@@ -70,16 +70,23 @@ describe('useFlipAnimation', () => {
     expect(result.current.isAnimating).toBe(true);
   });
 
-  it('calculates correct transform deltas', () => {
+  it('calculates correct translate transform', () => {
     const sourceRect = new DOMRect(50, 50, 200, 100);
 
     renderHook(() => useFlipAnimation(mockRef, { sourceRect }));
 
-    // The transform should position modal at source location
     // deltaX = 50 - 100 = -50, deltaY = 50 - 100 = -50
-    // scaleX = 200 / 500 = 0.4, scaleY = 100 / 400 = 0.25
-    expect(mockElement.style.transform).toContain('translate');
-    expect(mockElement.style.transform).toContain('scale');
+    expect(mockElement.style.transform).toContain('translate(-50px, -50px)');
+  });
+
+  it('applies clip-path to clip modal to source size', () => {
+    const sourceRect = new DOMRect(50, 50, 200, 100);
+
+    renderHook(() => useFlipAnimation(mockRef, { sourceRect }));
+
+    // Modal is 500x400, source is 200x100
+    // clipRight = 500 - 200 = 300, clipBottom = 400 - 100 = 300
+    expect(mockElement.style.clipPath).toContain('inset(0px 300px 300px 0px');
   });
 
   it('applies will-change during animation', () => {
@@ -87,15 +94,7 @@ describe('useFlipAnimation', () => {
 
     renderHook(() => useFlipAnimation(mockRef, { sourceRect }));
 
-    expect(mockElement.style.willChange).toBe('transform');
-  });
-
-  it('sets transform-origin to top left', () => {
-    const sourceRect = new DOMRect(50, 50, 200, 100);
-
-    renderHook(() => useFlipAnimation(mockRef, { sourceRect }));
-
-    expect(mockElement.style.transformOrigin).toBe('top left');
+    expect(mockElement.style.willChange).toBe('transform, clip-path');
   });
 
   it('respects custom duration', () => {
@@ -105,21 +104,19 @@ describe('useFlipAnimation', () => {
       useFlipAnimation(mockRef, { sourceRect, duration: 500 })
     );
 
-    // Trigger the double RAF callback to apply transition styles
-    // First RAF
+    // Trigger the double RAF callback
     if (rafCallback) {
       act(() => {
         rafCallback!(0);
       });
     }
-    // Second RAF (inner)
     if (rafCallback) {
       act(() => {
         rafCallback!(0);
       });
     }
 
-    expect(mockElement.style.transitionDuration).toBe('500ms');
+    expect(mockElement.style.transition).toContain('500ms');
   });
 
   it('respects custom easing', () => {
@@ -130,21 +127,19 @@ describe('useFlipAnimation', () => {
       useFlipAnimation(mockRef, { sourceRect, easing: customEasing })
     );
 
-    // Trigger the double RAF callback to apply transition styles
-    // First RAF
+    // Trigger the double RAF callback
     if (rafCallback) {
       act(() => {
         rafCallback!(0);
       });
     }
-    // Second RAF (inner)
     if (rafCallback) {
       act(() => {
         rafCallback!(0);
       });
     }
 
-    expect(mockElement.style.transitionTimingFunction).toBe(customEasing);
+    expect(mockElement.style.transition).toContain(customEasing);
   });
 
   it('skips animation when prefers-reduced-motion is set', () => {
@@ -173,32 +168,31 @@ describe('useFlipAnimation', () => {
     expect(result.current.isAnimating).toBe(false);
   });
 
-  it('cleans up will-change after animation completes', async () => {
+  it('cleans up styles after animation completes', async () => {
     vi.useFakeTimers();
     const sourceRect = new DOMRect(50, 50, 200, 100);
 
     renderHook(() => useFlipAnimation(mockRef, { sourceRect }));
 
     // Trigger the double RAF callback
-    // First RAF
     if (rafCallback) {
       act(() => {
         rafCallback!(0);
       });
     }
-    // Second RAF (inner)
     if (rafCallback) {
       act(() => {
         rafCallback!(0);
       });
     }
 
-    // Fast-forward past the default animation duration (300ms) + buffer (100ms)
+    // Fast-forward past the default animation duration (450ms) + buffer (50ms)
     act(() => {
-      vi.advanceTimersByTime(450);
+      vi.advanceTimersByTime(550);
     });
 
-    expect(mockElement.style.willChange).toBe('auto');
+    expect(mockElement.style.willChange).toBe('');
+    expect(mockElement.style.clipPath).toBe('');
 
     vi.useRealTimers();
   });
@@ -215,19 +209,24 @@ describe('useFlipAnimation', () => {
     expect(result.current.isAnimating).toBe(false);
   });
 
-  it('clamps scale to minimum 0.1 for very small sources', () => {
-    // Very small source rect
-    const sourceRect = new DOMRect(50, 50, 10, 5);
+  it('animates to final state with transform none and clip-path inset 0', () => {
+    const sourceRect = new DOMRect(50, 50, 200, 100);
 
     renderHook(() => useFlipAnimation(mockRef, { sourceRect }));
 
-    // Scale should be clamped, not 10/500 = 0.02
-    const transformMatch = mockElement.style.transform.match(/scale\(([^,]+),\s*([^)]+)\)/);
-    if (transformMatch) {
-      const scaleX = parseFloat(transformMatch[1]);
-      const scaleY = parseFloat(transformMatch[2]);
-      expect(scaleX).toBeGreaterThanOrEqual(0.1);
-      expect(scaleY).toBeGreaterThanOrEqual(0.1);
+    // Trigger the double RAF callback
+    if (rafCallback) {
+      act(() => {
+        rafCallback!(0);
+      });
     }
+    if (rafCallback) {
+      act(() => {
+        rafCallback!(0);
+      });
+    }
+
+    expect(mockElement.style.transform).toBe('none');
+    expect(mockElement.style.clipPath).toContain('inset(0');
   });
 });
