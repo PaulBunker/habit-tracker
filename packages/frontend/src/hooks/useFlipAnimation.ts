@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from 'react';
+import { useLayoutEffect, useState, useRef, type RefObject } from 'react';
 
 /**
  * Configuration for the FLIP animation
@@ -21,7 +21,7 @@ interface FlipAnimationResult {
 }
 
 const DEFAULT_DURATION = 300;
-const DEFAULT_EASING = 'cubic-bezier(0.2, 0, 0.2, 1)';
+const DEFAULT_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)'; // Material Design "Emphasized Decelerate"
 const MIN_SCALE = 0.1;
 
 /**
@@ -57,8 +57,10 @@ export function useFlipAnimation(
 ): FlipAnimationResult {
   const { sourceRect, duration = DEFAULT_DURATION, easing = DEFAULT_EASING } = config;
   const [isAnimating, setIsAnimating] = useState(false);
+  // Track if animation has been initialized to prevent React Strict Mode double-execution
+  const hasInitialized = useRef(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = targetRef.current;
 
     // Skip animation if no source rect, no element, or reduced motion preferred
@@ -66,6 +68,12 @@ export function useFlipAnimation(
       setIsAnimating(false);
       return;
     }
+
+    // Prevent double-execution in React Strict Mode
+    if (hasInitialized.current) {
+      return;
+    }
+    hasInitialized.current = true;
 
     // Get the target element's final position
     const targetRect = element.getBoundingClientRect();
@@ -84,28 +92,49 @@ export function useFlipAnimation(
     // Step 1: Apply initial transform (Invert) - position at source
     element.style.transformOrigin = 'top left';
     element.style.willChange = 'transform';
+    element.style.transition = 'none'; // Disable transitions for initial state
     element.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${scaleX}, ${scaleY})`;
 
-    // Step 2: In next frame, apply transition and remove transform (Play)
+    // Force browser to paint the initial state before animating
+    // This is critical - without it, the browser may batch the transform changes
+    element.getBoundingClientRect();
+
+    // Step 2: Use double RAF to ensure browser has painted initial state
+    // First RAF: schedules work for next frame
+    // Second RAF: ensures paint has occurred
     const rafId = requestAnimationFrame(() => {
-      element.style.transitionProperty = 'transform';
-      element.style.transitionDuration = `${duration}ms`;
-      element.style.transitionTimingFunction = easing;
-      element.style.transform = 'none';
+      requestAnimationFrame(() => {
+        element.style.transitionProperty = 'transform';
+        element.style.transitionDuration = `${duration}ms`;
+        element.style.transitionTimingFunction = easing;
+        element.style.transform = 'none';
+      });
     });
 
     // Step 3: Clean up after animation completes
+    // Add extra buffer for the double RAF delay (~32ms) plus animation duration
     const timeoutId = setTimeout(() => {
       element.style.willChange = 'auto';
+      element.style.transition = '';
       element.style.transitionProperty = '';
       element.style.transitionDuration = '';
       element.style.transitionTimingFunction = '';
       setIsAnimating(false);
-    }, duration + 50); // Add small buffer
+    }, duration + 100); // Buffer for double RAF + animation
 
     return () => {
       cancelAnimationFrame(rafId);
       clearTimeout(timeoutId);
+      // Reset element styles so next effect run sees clean state
+      element.style.transform = '';
+      element.style.transition = '';
+      element.style.willChange = '';
+      element.style.transformOrigin = '';
+      element.style.transitionProperty = '';
+      element.style.transitionDuration = '';
+      element.style.transitionTimingFunction = '';
+      // Reset for next animation
+      hasInitialized.current = false;
     };
   }, [sourceRect, duration, easing, targetRef]);
 

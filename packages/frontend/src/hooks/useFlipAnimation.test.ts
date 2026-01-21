@@ -105,7 +105,14 @@ describe('useFlipAnimation', () => {
       useFlipAnimation(mockRef, { sourceRect, duration: 500 })
     );
 
-    // Trigger the RAF callback to apply transition styles
+    // Trigger the double RAF callback to apply transition styles
+    // First RAF
+    if (rafCallback) {
+      act(() => {
+        rafCallback!(0);
+      });
+    }
+    // Second RAF (inner)
     if (rafCallback) {
       act(() => {
         rafCallback!(0);
@@ -123,7 +130,14 @@ describe('useFlipAnimation', () => {
       useFlipAnimation(mockRef, { sourceRect, easing: customEasing })
     );
 
-    // Trigger the RAF callback to apply transition styles
+    // Trigger the double RAF callback to apply transition styles
+    // First RAF
+    if (rafCallback) {
+      act(() => {
+        rafCallback!(0);
+      });
+    }
+    // Second RAF (inner)
     if (rafCallback) {
       act(() => {
         rafCallback!(0);
@@ -165,16 +179,23 @@ describe('useFlipAnimation', () => {
 
     renderHook(() => useFlipAnimation(mockRef, { sourceRect }));
 
-    // Trigger the animation frame
+    // Trigger the double RAF callback
+    // First RAF
+    if (rafCallback) {
+      act(() => {
+        rafCallback!(0);
+      });
+    }
+    // Second RAF (inner)
     if (rafCallback) {
       act(() => {
         rafCallback!(0);
       });
     }
 
-    // Fast-forward past the default animation duration (300ms) + buffer
+    // Fast-forward past the default animation duration (300ms) + buffer (100ms)
     act(() => {
-      vi.advanceTimersByTime(350);
+      vi.advanceTimersByTime(450);
     });
 
     expect(mockElement.style.willChange).toBe('auto');
