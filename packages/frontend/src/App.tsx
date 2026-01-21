@@ -63,6 +63,7 @@ function HomePage() {
   return (
     <Flipper
       flipKey={selectedHabitId || 'closed'}
+      decisionData={{ selectedHabitId }}
       spring={{ stiffness: 300, damping: 30 }}
       staggerConfig={{
         default: {

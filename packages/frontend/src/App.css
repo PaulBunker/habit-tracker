@@ -157,10 +157,11 @@
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
-/* Ghost placeholder for FLIP animation */
+/* Ghost placeholder for FLIP animation - maintains space while item becomes modal */
 .checklist-item--ghost {
   visibility: hidden;
   pointer-events: none;
+  min-height: 59px;
 }
 
 /* Inner wrapper for FLIP inverse scale */

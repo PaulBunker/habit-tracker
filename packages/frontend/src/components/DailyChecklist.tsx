@@ -103,7 +103,16 @@ export function DailyChecklist({ habits, todayLogs, onUpdate, onOpenSettings, se
           <h3 className="checklist-section-title">To Do</h3>
           <div className="checklist-items">
             {pendingHabits.map((habit) => (
-              <Flipped key={habit.id} flipId={`habit-${habit.id}`}>
+              <Flipped
+                key={habit.id}
+                flipId={`habit-${habit.id}`}
+                shouldFlip={(prev, curr) => {
+                  // Only animate if this item is being selected or deselected
+                  const prevId = (prev as { selectedHabitId: string | null })?.selectedHabitId;
+                  const currId = (curr as { selectedHabitId: string | null })?.selectedHabitId;
+                  return prevId === habit.id || currId === habit.id;
+                }}
+              >
                 <div>
                   <ChecklistItem
                     habit={habit}
@@ -125,7 +134,16 @@ export function DailyChecklist({ habits, todayLogs, onUpdate, onOpenSettings, se
           <h3 className="checklist-section-title">Done</h3>
           <div className="checklist-items">
             {completedHabits.map((habit) => (
-              <Flipped key={habit.id} flipId={`habit-${habit.id}`}>
+              <Flipped
+                key={habit.id}
+                flipId={`habit-${habit.id}`}
+                shouldFlip={(prev, curr) => {
+                  // Only animate if this item is being selected or deselected
+                  const prevId = (prev as { selectedHabitId: string | null })?.selectedHabitId;
+                  const currId = (curr as { selectedHabitId: string | null })?.selectedHabitId;
+                  return prevId === habit.id || currId === habit.id;
+                }}
+              >
                 <div>
                   <ChecklistItem
                     habit={habit}
