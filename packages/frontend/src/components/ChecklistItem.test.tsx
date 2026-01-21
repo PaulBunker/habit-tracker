@@ -158,7 +158,7 @@ describe('ChecklistItem', () => {
     expect(screen.getByPlaceholderText(/Enter minutes/i)).toBeInTheDocument();
   });
 
-  it('opens settings when cog clicked', async () => {
+  it('opens settings when cog clicked and passes sourceRect', async () => {
     render(
       <ChecklistItem
         habit={mockHabit}
@@ -170,7 +170,16 @@ describe('ChecklistItem', () => {
     const settingsButton = screen.getByLabelText('Habit settings');
     await userEvent.click(settingsButton);
 
-    expect(mockOnOpenSettings).toHaveBeenCalledWith(mockHabit);
+    // Should be called with habit and a DOMRect-like object
+    expect(mockOnOpenSettings).toHaveBeenCalledWith(
+      mockHabit,
+      expect.objectContaining({
+        top: expect.any(Number),
+        left: expect.any(Number),
+        width: expect.any(Number),
+        height: expect.any(Number),
+      })
+    );
   });
 
   it('applies completed class when done', () => {

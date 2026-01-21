@@ -29,3 +29,13 @@ body {
 #root {
   min-height: 100vh;
 }
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .flip-animating {
+    animation: none !important;
+    transition: none !important;
+    will-change: auto !important;
+    transform: none !important;
+  }
+}

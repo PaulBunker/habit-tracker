@@ -14,22 +14,26 @@ function HomePage() {
   const { habits, loading, error, refresh: refreshHabits } = useHabits();
   const { logs: todayLogs, refresh: refreshLogs } = useTodayLogs(habits.map((h) => h.id));
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
+  const [sourceRect, setSourceRect] = useState<DOMRect | null>(null);
 
   const handleUpdate = useCallback(() => {
     refreshHabits();
     refreshLogs();
   }, [refreshHabits, refreshLogs]);
 
-  const handleOpenSettings = (habit: Habit) => {
+  const handleOpenSettings = (habit: Habit, rect: DOMRect) => {
+    setSourceRect(rect);
     setSelectedHabit(habit);
   };
 
   const handleCloseSettings = () => {
     setSelectedHabit(null);
+    setSourceRect(null);
   };
 
   const handleSettingsSaved = () => {
     setSelectedHabit(null);
+    setSourceRect(null);
     handleUpdate();
   };
 
@@ -111,6 +115,7 @@ function HomePage() {
           habit={selectedHabit}
           onClose={handleCloseSettings}
           onSave={handleSettingsSaved}
+          sourceRect={sourceRect}
         />
       )}
     </div>

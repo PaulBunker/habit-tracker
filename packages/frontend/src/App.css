@@ -977,3 +977,14 @@
 .info-box p:last-child {
   margin-bottom: 0;
 }
+
+/* F.L.I.P. Animation */
+.flip-animating {
+  will-change: transform;
+  transform-origin: top left;
+}
+
+.modal.flip-animating {
+  /* Prevent layout shift during animation */
+  contain: layout;
+}

@@ -17,8 +17,8 @@ interface DailyChecklistProps {
   todayLogs: Record<string, HabitLog | undefined>;
   /** Callback when any habit status changes */
   onUpdate: () => void;
-  /** Callback to open settings for a specific habit */
-  onOpenSettings: (habit: Habit) => void;
+  /** Callback to open settings for a specific habit with source rect for animation */
+  onOpenSettings: (habit: Habit, sourceRect: DOMRect) => void;
 }
 
 /**

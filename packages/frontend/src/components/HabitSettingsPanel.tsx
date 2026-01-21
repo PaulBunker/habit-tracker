@@ -1,19 +1,25 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { Habit } from '@habit-tracker/shared';
 import { getTimezoneOffset } from '@habit-tracker/shared';
 import { habitsApi } from '../api/client';
 import { CalendarView } from './CalendarView';
 import { GraphView } from './GraphView';
+import { useFlipAnimation } from '../hooks/useFlipAnimation';
 
 interface HabitSettingsPanelProps {
   habit: Habit;
   onClose: () => void;
   onSave: () => void;
+  /** Source rect from the clicked card for F.L.I.P. animation */
+  sourceRect?: DOMRect | null;
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export function HabitSettingsPanel({ habit, onClose, onSave }: HabitSettingsPanelProps) {
+export function HabitSettingsPanel({ habit, onClose, onSave, sourceRect }: HabitSettingsPanelProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const { isAnimating } = useFlipAnimation(modalRef, { sourceRect: sourceRect ?? null });
+
   const [name, setName] = useState(habit.name);
   const [description, setDescription] = useState(habit.description || '');
   const [deadlineLocal, setDeadlineLocal] = useState(habit.deadlineLocal || '');
@@ -94,7 +100,11 @@ export function HabitSettingsPanel({ habit, onClose, onSave }: HabitSettingsPane
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal settings-panel" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={modalRef}
+        className={`modal settings-panel${isAnimating ? ' flip-animating' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-header">
           <h2>Habit Settings</h2>
           <button className="close-btn" onClick={onClose}>×</button>

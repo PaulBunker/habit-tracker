@@ -4,7 +4,7 @@
  * @packageDocumentation
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { Habit, HabitLog } from '@habit-tracker/shared';
 import { habitsApi } from '../api/client';
 
@@ -18,8 +18,8 @@ interface ChecklistItemProps {
   todayLog?: HabitLog;
   /** Callback when the habit status changes (completed/skipped) */
   onUpdate: () => void;
-  /** Callback to open the settings panel for this habit */
-  onOpenSettings: (habit: Habit) => void;
+  /** Callback to open the settings panel for this habit with source rect for animation */
+  onOpenSettings: (habit: Habit, sourceRect: DOMRect) => void;
 }
 
 /**
@@ -46,6 +46,7 @@ export function ChecklistItem({ habit, todayLog, onUpdate, onOpenSettings }: Che
   const [dataValue, setDataValue] = useState('');
   const [showDataInput, setShowDataInput] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const itemRef = useRef<HTMLDivElement>(null);
 
   const isCompleted = todayLog?.status === 'completed';
   const isSkipped = todayLog?.status === 'skipped';
@@ -110,7 +111,7 @@ export function ChecklistItem({ habit, todayLog, onUpdate, onOpenSettings }: Che
   };
 
   return (
-    <div className={`checklist-item ${getStatusClass()}`}>
+    <div ref={itemRef} className={`checklist-item ${getStatusClass()}`}>
       <label className="checklist-checkbox">
         <input
           type="checkbox"
@@ -140,7 +141,10 @@ export function ChecklistItem({ habit, todayLog, onUpdate, onOpenSettings }: Che
 
       <button
         className="checklist-settings"
-        onClick={() => onOpenSettings(habit)}
+        onClick={() => {
+          const rect = itemRef.current?.getBoundingClientRect();
+          if (rect) onOpenSettings(habit, rect);
+        }}
         title="Settings"
         aria-label="Habit settings"
       >
