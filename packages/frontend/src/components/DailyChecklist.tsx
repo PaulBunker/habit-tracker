@@ -4,6 +4,7 @@
  * @packageDocumentation
  */
 
+import { Flipped } from 'react-flip-toolkit';
 import type { Habit, HabitLog } from '@habit-tracker/shared';
 import { ChecklistItem } from './ChecklistItem';
 
@@ -19,6 +20,8 @@ interface DailyChecklistProps {
   onUpdate: () => void;
   /** Callback to open settings for a specific habit */
   onOpenSettings: (habit: Habit) => void;
+  /** ID of the currently selected habit (for FLIP animation) */
+  selectedHabitId: string | null;
 }
 
 /**
@@ -53,7 +56,7 @@ interface DailyChecklistProps {
  * }
  * ```
  */
-export function DailyChecklist({ habits, todayLogs, onUpdate, onOpenSettings }: DailyChecklistProps) {
+export function DailyChecklist({ habits, todayLogs, onUpdate, onOpenSettings, selectedHabitId }: DailyChecklistProps) {
   // Check if habit is active today based on activeDays
   const isActiveToday = (habit: Habit): boolean => {
     if (!habit.activeDays || habit.activeDays.length === 0) {
@@ -100,13 +103,18 @@ export function DailyChecklist({ habits, todayLogs, onUpdate, onOpenSettings }: 
           <h3 className="checklist-section-title">To Do</h3>
           <div className="checklist-items">
             {pendingHabits.map((habit) => (
-              <ChecklistItem
-                key={habit.id}
-                habit={habit}
-                todayLog={todayLogs[habit.id]}
-                onUpdate={onUpdate}
-                onOpenSettings={onOpenSettings}
-              />
+              <Flipped key={habit.id} flipId={`habit-${habit.id}`}>
+                <div>
+                  <ChecklistItem
+                    habit={habit}
+                    todayLog={todayLogs[habit.id]}
+                    onUpdate={onUpdate}
+                    onOpenSettings={onOpenSettings}
+                    isSelected={habit.id === selectedHabitId}
+                    flipId={`habit-${habit.id}`}
+                  />
+                </div>
+              </Flipped>
             ))}
           </div>
         </div>
@@ -117,13 +125,18 @@ export function DailyChecklist({ habits, todayLogs, onUpdate, onOpenSettings }: 
           <h3 className="checklist-section-title">Done</h3>
           <div className="checklist-items">
             {completedHabits.map((habit) => (
-              <ChecklistItem
-                key={habit.id}
-                habit={habit}
-                todayLog={todayLogs[habit.id]}
-                onUpdate={onUpdate}
-                onOpenSettings={onOpenSettings}
-              />
+              <Flipped key={habit.id} flipId={`habit-${habit.id}`}>
+                <div>
+                  <ChecklistItem
+                    habit={habit}
+                    todayLog={todayLogs[habit.id]}
+                    onUpdate={onUpdate}
+                    onOpenSettings={onOpenSettings}
+                    isSelected={habit.id === selectedHabitId}
+                    flipId={`habit-${habit.id}`}
+                  />
+                </div>
+              </Flipped>
             ))}
           </div>
         </div>

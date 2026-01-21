@@ -1,9 +1,49 @@
 import { useState } from 'react';
+import { Flipped, spring } from 'react-flip-toolkit';
 import type { Habit } from '@habit-tracker/shared';
 import { getTimezoneOffset } from '@habit-tracker/shared';
 import { habitsApi } from '../api/client';
 import { CalendarView } from './CalendarView';
 import { GraphView } from './GraphView';
+
+const onOverlayAppear = (el: HTMLElement): void => {
+  el.style.opacity = '0';
+  spring({
+    config: { stiffness: 200, damping: 25 },
+    values: { opacity: [0, 1] },
+    onUpdate: (val) => {
+      el.style.opacity = String((val as { opacity: number }).opacity);
+    },
+  });
+};
+
+
+const onContentAppear = (el: HTMLElement, index: number): void => {
+  el.style.opacity = '0';
+  setTimeout(() => {
+    spring({
+      config: { stiffness: 300, damping: 20 },
+      values: { opacity: [0, 1] },
+      onUpdate: (val) => {
+        el.style.opacity = String((val as { opacity: number }).opacity);
+      },
+    });
+  }, index * 80);
+};
+
+const onContentExit = (el: HTMLElement, index: number, removeElement: () => void): void => {
+  setTimeout(() => {
+    spring({
+      config: { stiffness: 300, damping: 20 },
+      values: { opacity: [1, 0] },
+      onUpdate: (val) => {
+        el.style.opacity = String((val as { opacity: number }).opacity);
+      },
+      onComplete: removeElement,
+    });
+  }, index * 50);
+};
+
 
 interface HabitSettingsPanelProps {
   habit: Habit;
@@ -93,130 +133,152 @@ export function HabitSettingsPanel({ habit, onClose, onSave }: HabitSettingsPane
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal settings-panel" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Habit Settings</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
-        </div>
+    <Flipped flipId="settings-overlay" onAppear={onOverlayAppear}>
+      <div className="modal-overlay" onClick={onClose}>
+        <Flipped flipId={`habit-${habit.id}`}>
+          <div className="modal settings-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{habit.name}</h2>
+              <button className="close-btn" onClick={onClose}>×</button>
+            </div>
 
-        <div className="view-buttons">
-          <button className="btn btn-secondary" onClick={() => setShowCalendar(true)}>
-            View Calendar
-          </button>
-          {habit.dataTracking && (
-            <button className="btn btn-secondary" onClick={() => setShowGraph(true)}>
-              View Graph
-            </button>
-          )}
-        </div>
+            <Flipped inverseFlipId={`habit-${habit.id}`} scale>
+              <div className="modal-content">
+                <Flipped flipId={`settings-view-btns-${habit.id}`} stagger onAppear={onContentAppear} onExit={onContentExit}>
+                  <div className="view-buttons">
+                    <button className="btn btn-secondary" onClick={() => setShowCalendar(true)}>
+                      View Calendar
+                    </button>
+                    {habit.dataTracking && (
+                      <button className="btn btn-secondary" onClick={() => setShowGraph(true)}>
+                        View Graph
+                      </button>
+                    )}
+                  </div>
+                </Flipped>
 
-        {error && <div className="error">{error}</div>}
+                {error && <div className="error">{error}</div>}
 
-        <div className="settings-form">
-          <div className="form-group">
-            <label htmlFor="settings-name">Name</label>
-            <input
-              id="settings-name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={100}
-            />
-          </div>
+                <div className="settings-form">
+                  <Flipped flipId={`settings-name-${habit.id}`} stagger onAppear={onContentAppear} onExit={onContentExit}>
+                    <div className="form-group">
+                      <label htmlFor="settings-name">Name</label>
+                      <input
+                        id="settings-name"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        maxLength={100}
+                      />
+                    </div>
+                  </Flipped>
 
-          <div className="form-group">
-            <label htmlFor="settings-description">Description</label>
-            <textarea
-              id="settings-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              maxLength={500}
-              rows={2}
-            />
-          </div>
+                  <Flipped flipId={`settings-desc-${habit.id}`} stagger onAppear={onContentAppear} onExit={onContentExit}>
+                    <div className="form-group">
+                      <label htmlFor="settings-description">Description</label>
+                      <textarea
+                        id="settings-description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        maxLength={500}
+                        rows={2}
+                      />
+                    </div>
+                  </Flipped>
 
-          <div className="form-group">
-            <label htmlFor="settings-deadline">Deadline</label>
-            <input
-              id="settings-deadline"
-              type="time"
-              value={deadlineLocal}
-              onChange={(e) => setDeadlineLocal(e.target.value)}
-            />
-            <small>Blocking starts when overdue</small>
-          </div>
+                  <Flipped flipId={`settings-deadline-${habit.id}`} stagger onAppear={onContentAppear} onExit={onContentExit}>
+                    <div className="form-group">
+                      <label htmlFor="settings-deadline">Deadline</label>
+                      <input
+                        id="settings-deadline"
+                        type="time"
+                        value={deadlineLocal}
+                        onChange={(e) => setDeadlineLocal(e.target.value)}
+                      />
+                      <small>Blocking starts when overdue</small>
+                    </div>
+                  </Flipped>
 
-          <div className="form-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={dataTracking}
-                onChange={(e) => setDataTracking(e.target.checked)}
-              />
-              <span>Track data</span>
-            </label>
-            {dataTracking && (
-              <input
-                type="text"
-                value={dataUnit}
-                onChange={(e) => setDataUnit(e.target.value)}
-                placeholder="Unit (e.g., lbs, minutes)"
-                maxLength={20}
-                className="unit-input"
-              />
-            )}
-          </div>
+                  <Flipped flipId={`settings-tracking-${habit.id}`} stagger onAppear={onContentAppear} onExit={onContentExit}>
+                    <div className="form-group">
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={dataTracking}
+                          onChange={(e) => setDataTracking(e.target.checked)}
+                        />
+                        <span>Track data</span>
+                      </label>
+                      {dataTracking && (
+                        <input
+                          type="text"
+                          value={dataUnit}
+                          onChange={(e) => setDataUnit(e.target.value)}
+                          placeholder="Unit (e.g., lbs, minutes)"
+                          maxLength={20}
+                          className="unit-input"
+                        />
+                      )}
+                    </div>
+                  </Flipped>
 
-          <div className="form-group">
-            <label>Active Days</label>
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={allDays}
-                onChange={(e) => handleAllDaysChange(e.target.checked)}
-              />
-              <span>Every day</span>
-            </label>
-            {!allDays && (
-              <div className="days-selector">
-                {DAYS.map((day, index) => (
-                  <button
-                    key={day}
-                    type="button"
-                    className={`day-btn ${activeDays.includes(index) ? 'active' : ''}`}
-                    onClick={() => toggleDay(index)}
-                  >
-                    {day}
-                  </button>
-                ))}
+                  <Flipped flipId={`settings-days-${habit.id}`} stagger onAppear={onContentAppear} onExit={onContentExit}>
+                    <div className="form-group">
+                      <label>Active Days</label>
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={allDays}
+                          onChange={(e) => handleAllDaysChange(e.target.checked)}
+                        />
+                        <span>Every day</span>
+                      </label>
+                      {!allDays && (
+                        <div className="days-selector">
+                          {DAYS.map((day, index) => (
+                            <button
+                              key={day}
+                              type="button"
+                              className={`day-btn ${activeDays.includes(index) ? 'active' : ''}`}
+                              onClick={() => toggleDay(index)}
+                            >
+                              {day}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </Flipped>
+                </div>
+
+                <Flipped flipId={`settings-actions-${habit.id}`} stagger onAppear={onContentAppear} onExit={onContentExit}>
+                  <div className="settings-actions">
+                    <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
+                      {deleting ? 'Deleting...' : 'Delete Habit'}
+                    </button>
+                    <div className="settings-actions-right">
+                      <button className="btn btn-secondary" onClick={onClose}>
+                        Cancel
+                      </button>
+                      <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+                        {saving ? 'Saving...' : 'Save'}
+                      </button>
+                    </div>
+                  </div>
+                </Flipped>
               </div>
-            )}
+            </Flipped>
           </div>
-        </div>
+        </Flipped>
 
-        <div className="settings-actions">
-          <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
-            {deleting ? 'Deleting...' : 'Delete Habit'}
-          </button>
-          <div className="settings-actions-right">
-            <button className="btn btn-secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving...' : 'Save'}
-            </button>
-          </div>
-        </div>
+        {showCalendar && (
+          <CalendarView habit={habit} onClose={() => setShowCalendar(false)} />
+        )}
+
+        {showGraph && habit.dataTracking && (
+          <GraphView habit={habit} onClose={() => setShowGraph(false)} />
+        )}
       </div>
-
-      {showCalendar && (
-        <CalendarView habit={habit} onClose={() => setShowCalendar(false)} />
-      )}
-
-      {showGraph && habit.dataTracking && (
-        <GraphView habit={habit} onClose={() => setShowGraph(false)} />
-      )}
-    </div>
+    </Flipped>
   );
 }

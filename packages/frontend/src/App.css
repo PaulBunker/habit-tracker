@@ -144,10 +144,31 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   transition: all 0.2s;
+  cursor: pointer;
 }
 
 .checklist-item:hover {
   border-color: var(--primary-color);
+}
+
+.checklist-item:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* Ghost placeholder for FLIP animation */
+.checklist-item--ghost {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Inner wrapper for FLIP inverse scale */
+.checklist-item__inner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
 }
 
 .checklist-item--completed {
