@@ -72,6 +72,25 @@ User Action → Component → API Client → Backend
            Hook refresh → Component re-render
 ```
 
+## Key Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `react-flip-toolkit` | FLIP animations for smooth card-to-modal transitions |
+| `react-router-dom` | Client-side routing |
+| `zod` | Runtime schema validation |
+
+### FLIP Animations
+
+The `HabitSettingsPanel` uses [react-flip-toolkit](https://github.com/aholachek/react-flip-toolkit) for smooth modal animations. When a habit item is clicked, it morphs into the settings modal using the FLIP (First, Last, Invert, Play) technique.
+
+Key animation callbacks in `HabitSettingsPanel.tsx`:
+- `onOverlayAppear` - Fades in the modal backdrop
+- `onContentAppear` - Staggers form fields into view
+- `onContentExit` - Staggers form fields out before close
+
+See `FLIP_LEARNINGS.md` in the repo root for implementation details.
+
 ## Environment Variables
 
 | Variable | Development | Production |
