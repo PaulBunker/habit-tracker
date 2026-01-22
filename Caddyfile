@@ -8,11 +8,11 @@
 #   1. Install Caddy: brew install caddy
 #
 #   2. Add to /etc/hosts:
-#      127.0.0.1 habbits.localhost dev.habbits.localhost
+#      127.0.0.1 habits.localhost dev.habits.localhost
 #
 #   3. Configure VITE_ALLOWED_HOSTS in your .env files:
-#      .env.development:  VITE_ALLOWED_HOSTS=dev.habbits.localhost
-#      .env.production:   VITE_ALLOWED_HOSTS=habbits.localhost
+#      .env.development:  VITE_ALLOWED_HOSTS=dev.habits.localhost
+#      .env.production:   VITE_ALLOWED_HOSTS=habits.localhost
 #
 #   4. Start Caddy: caddy run --config Caddyfile
 #
@@ -20,8 +20,8 @@
 #
 # ACCESS
 # ------
-#   http://habbits.localhost     -> production (port 5173)
-#   http://dev.habbits.localhost -> development (port 5174)
+#   http://habits.localhost     -> production (port 5173)
+#   http://dev.habits.localhost -> development (port 5174)
 #
 # TLD RECOMMENDATIONS
 # -------------------
@@ -40,10 +40,10 @@
 #
 # Full documentation: packages/docs/guide/local-domains.md
 
-http://habbits.localhost {
+http://habits.localhost {
     reverse_proxy localhost:5173
 }
 
-http://dev.habbits.localhost {
+http://dev.habits.localhost {
     reverse_proxy localhost:5174
 }

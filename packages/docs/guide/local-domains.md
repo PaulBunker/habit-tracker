@@ -4,7 +4,7 @@ Access the Habit Tracker app using custom local domains instead of `localhost:PO
 
 ## Why Use Local Domains?
 
-- **Cleaner URLs**: `http://habbits.localhost` instead of `http://localhost:5173`
+- **Cleaner URLs**: `http://habits.localhost` instead of `http://localhost:5173`
 - **Environment separation**: Different domains for production vs development
 - **Realistic testing**: URLs that better simulate production
 
@@ -29,7 +29,7 @@ sudo nano /etc/hosts
 Add:
 
 ```
-127.0.0.1 habbits.localhost dev.habbits.localhost
+127.0.0.1 habits.localhost dev.habits.localhost
 ```
 
 Flush DNS cache:
@@ -44,17 +44,17 @@ Add to your `.env` files:
 
 **`.env.development`**:
 ```
-VITE_ALLOWED_HOSTS=dev.habbits.localhost
+VITE_ALLOWED_HOSTS=dev.habits.localhost
 ```
 
 **`.env.production`**:
 ```
-VITE_ALLOWED_HOSTS=habbits.localhost
+VITE_ALLOWED_HOSTS=habits.localhost
 ```
 
 For multiple hosts, separate with commas:
 ```
-VITE_ALLOWED_HOSTS=habbits.localhost,dev.habbits.localhost
+VITE_ALLOWED_HOSTS=habits.localhost,dev.habits.localhost
 ```
 
 ### 4. Start Caddy
@@ -67,8 +67,8 @@ caddy run --config Caddyfile
 
 | Mode | URL |
 |------|-----|
-| Production | http://habbits.localhost |
-| Development | http://dev.habbits.localhost |
+| Production | http://habits.localhost |
+| Development | http://dev.habits.localhost |
 
 ## TLD Recommendations
 
@@ -89,7 +89,7 @@ The `.dev` TLD is owned by Google and is on the HSTS preload list. All major bro
 
 ```bash
 # Verify hosts file entries
-grep habbits /etc/hosts
+grep habits /etc/hosts
 
 # Check if Caddy is running on port 80
 lsof -i :80 | grep LISTEN
@@ -98,7 +98,7 @@ lsof -i :80 | grep LISTEN
 lsof -i :5173 -i :5174 | grep LISTEN
 
 # Test the reverse proxy
-curl -I http://habbits.localhost
+curl -I http://habits.localhost
 ```
 
 ### Common Issues
