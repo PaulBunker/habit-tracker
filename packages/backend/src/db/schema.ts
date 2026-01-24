@@ -49,9 +49,41 @@ export const habitLogs = sqliteTable('habit_logs', {
     .default(sql`CURRENT_TIMESTAMP`),
 });
 
+/**
+ * Projects table - stores projects that habits can be linked to
+ */
+export const projects = sqliteTable('projects', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  markdownPath: text('markdown_path').notNull(), // e.g., ~/.habit-tracker/projects/learn-bass.md
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at')
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+});
+
+/**
+ * Habit-Project junction table - many-to-many relationship
+ */
+export const habitProjects = sqliteTable('habit_projects', {
+  habitId: text('habit_id')
+    .notNull()
+    .references(() => habits.id, { onDelete: 'cascade' }),
+  projectId: text('project_id')
+    .notNull()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+});
+
 export type Habit = typeof habits.$inferSelect;
 export type NewHabit = typeof habits.$inferInsert;
 export type HabitLog = typeof habitLogs.$inferSelect;
 export type NewHabitLog = typeof habitLogs.$inferInsert;
 export type Setting = typeof settings.$inferSelect;
 export type NewSetting = typeof settings.$inferInsert;
+export type Project = typeof projects.$inferSelect;
+export type NewProject = typeof projects.$inferInsert;
+export type HabitProject = typeof habitProjects.$inferSelect;
+export type NewHabitProject = typeof habitProjects.$inferInsert;

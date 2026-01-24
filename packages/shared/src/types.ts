@@ -142,3 +142,53 @@ export interface GraphDataPoint {
   date: string;
   value: number;
 }
+
+/**
+ * Represents a project that habits can be linked to.
+ *
+ * Projects provide context for habits by connecting daily actions to larger goals.
+ * Each project has a markdown file for detailed planning and notes.
+ */
+export interface Project {
+  /** Unique identifier (UUID v4) */
+  id: string;
+  /** Display name shown in the projects list */
+  name: string;
+  /** Optional short description */
+  description?: string;
+  /** Path to the markdown file storing project content */
+  markdownPath: string;
+  /** ISO 8601 timestamp when created (UTC) */
+  createdAt: string;
+  /** ISO 8601 timestamp when last updated (UTC) */
+  updatedAt: string;
+}
+
+/** Request body for creating a new project. */
+export interface CreateProjectRequest {
+  name: string;
+  description?: string;
+  /** Initial markdown content for the project file */
+  content?: string;
+}
+
+/** Request body for updating a project. */
+export interface UpdateProjectRequest {
+  name?: string;
+  description?: string;
+  /** Updated markdown content */
+  content?: string;
+}
+
+/** Project with its linked habits and markdown content. */
+export interface ProjectWithDetails extends Project {
+  /** Markdown content from the project file */
+  content: string;
+  /** IDs of habits linked to this project */
+  habitIds: string[];
+}
+
+/** Request body for linking/unlinking habits to a project. */
+export interface LinkHabitsRequest {
+  habitIds: string[];
+}

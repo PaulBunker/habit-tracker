@@ -999,3 +999,359 @@
 .info-box p:last-child {
   margin-bottom: 0;
 }
+
+/* Footer Links */
+.footer-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.projects-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+
+.projects-link:hover {
+  color: var(--primary-color);
+}
+
+/* Projects List Page */
+.projects-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.projects-header {
+  margin-bottom: 2rem;
+}
+
+.projects-header h1 {
+  font-size: 1.75rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.header-description {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.projects-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.create-project-btn {
+  align-self: flex-start;
+}
+
+.create-project-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--surface);
+  border-radius: 8px;
+}
+
+.create-project-form input {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.create-project-form input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.form-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.project-card {
+  display: block;
+  padding: 1.25rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+}
+
+.project-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.project-name {
+  font-size: 1.125rem;
+  margin: 0 0 0.25rem 0;
+  color: var(--text-primary);
+}
+
+.project-description {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.75rem 0;
+  line-height: 1.4;
+}
+
+.project-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.habit-count {
+  background: var(--surface);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+}
+
+.empty-state p {
+  margin: 0 0 0.5rem 0;
+}
+
+.empty-hint {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+/* Project Detail Page */
+.project-detail-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.project-detail-header {
+  margin-bottom: 2rem;
+}
+
+.project-detail-header h1 {
+  font-size: 1.75rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.project-detail-header .project-description {
+  margin-bottom: 1rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.edit-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.edit-name-input {
+  font-size: 1.5rem;
+  font-weight: 600;
+  padding: 0.5rem;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+}
+
+.edit-name-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.edit-description-input {
+  font-size: 0.875rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.edit-description-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.project-detail-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.project-habits-section,
+.project-content-section {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.section-header h2 {
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.project-content-section h2 {
+  font-size: 1.125rem;
+  margin: 0 0 1rem 0;
+}
+
+.btn-small {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.linked-habits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.linked-habit-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  background: var(--surface);
+  border-radius: 6px;
+}
+
+.linked-habit-item .habit-name {
+  font-weight: 500;
+}
+
+.linked-habit-item .habit-description {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.no-habits {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.markdown-editor {
+  width: 100%;
+  min-height: 300px;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.markdown-editor:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.markdown-content {
+  min-height: 200px;
+}
+
+.markdown-preview {
+  font-family: monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin: 0;
+  padding: 1rem;
+  background: var(--surface);
+  border-radius: 6px;
+}
+
+.empty-content {
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Link Habits Modal */
+.modal h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+}
+
+.modal-description {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 0 0 1.5rem 0;
+}
+
+.habits-selection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 1.5rem;
+}
+
+.habit-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--surface);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.habit-checkbox:hover {
+  background: var(--border);
+}
+
+.habit-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.habit-checkbox .habit-name {
+  font-size: 0.875rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
