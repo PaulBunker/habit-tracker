@@ -16,16 +16,17 @@ import { habitsApi } from '../api/client';
  * when the habit IDs change.
  *
  * @param habitIds - Array of habit UUIDs to fetch logs for
- * @returns Object containing logs map, loading state, and refresh function
+ * @returns Object containing logs map, loading state, error message, and refresh function
  *
  * @example
  * ```tsx
  * function DailyView() {
  *   const { habits } = useHabits();
  *   const habitIds = habits.map(h => h.id);
- *   const { logs, loading, refresh } = useTodayLogs(habitIds);
+ *   const { logs, loading, error, refresh } = useTodayLogs(habitIds);
  *
  *   if (loading) return <Spinner />;
+ *   if (error) return <Error message={error} />;
  *
  *   return habits.map(habit => (
  *     <ChecklistItem
@@ -42,16 +43,19 @@ import { habitsApi } from '../api/client';
 export function useTodayLogs(habitIds: string[]) {
   const [logs, setLogs] = useState<Record<string, HabitLog | undefined>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchLogs = useCallback(async () => {
     if (habitIds.length === 0) {
       setLogs({});
       setLoading(false);
+      setError(null);
       return;
     }
 
     try {
       setLoading(true);
+      setError(null);
       const today = new Date().toISOString().split('T')[0];
       const logsMap: Record<string, HabitLog | undefined> = {};
 
@@ -68,8 +72,8 @@ export function useTodayLogs(habitIds: string[]) {
       );
 
       setLogs(logsMap);
-    } catch {
-      // Error handling
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch today\'s logs');
     } finally {
       setLoading(false);
     }
@@ -83,5 +87,5 @@ export function useTodayLogs(habitIds: string[]) {
     fetchLogs();
   }, [fetchLogs]);
 
-  return { logs, loading, refresh };
+  return { logs, loading, error, refresh };
 }
