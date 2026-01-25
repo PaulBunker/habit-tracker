@@ -1,3 +1,10 @@
+/**
+ * Habit settings panel with FLIP animations for smooth modal transitions.
+ *
+ * Uses react-flip-toolkit for card-to-modal morphing animations.
+ * @packageDocumentation
+ */
+
 import { useState } from 'react';
 import { Flipped, spring } from 'react-flip-toolkit';
 import type { Habit } from '@habit-tracker/shared';
@@ -6,6 +13,10 @@ import { habitsApi } from '../api/client';
 import { CalendarView } from './CalendarView';
 import { GraphView } from './GraphView';
 
+/**
+ * FLIP callback for modal overlay fade-in animation.
+ * @param el - The overlay DOM element to animate
+ */
 const onOverlayAppear = (el: HTMLElement): void => {
   el.style.opacity = '0';
   spring({
@@ -17,7 +28,12 @@ const onOverlayAppear = (el: HTMLElement): void => {
   });
 };
 
-
+/**
+ * FLIP callback for staggered content fade-in animation.
+ * Each form field fades in sequentially based on its index.
+ * @param el - The content DOM element to animate
+ * @param index - Stagger index for sequential timing (delay = index * 80ms)
+ */
 const onContentAppear = (el: HTMLElement, index: number): void => {
   el.style.opacity = '0';
   setTimeout(() => {
@@ -31,6 +47,13 @@ const onContentAppear = (el: HTMLElement, index: number): void => {
   }, index * 80);
 };
 
+/**
+ * FLIP callback for staggered content fade-out animation.
+ * Each form field fades out sequentially before modal closes.
+ * @param el - The content DOM element to animate
+ * @param index - Stagger index for sequential timing (delay = index * 50ms)
+ * @param removeElement - Callback to remove element from DOM after animation completes
+ */
 const onContentExit = (el: HTMLElement, index: number, removeElement: () => void): void => {
   setTimeout(() => {
     spring({
@@ -44,10 +67,13 @@ const onContentExit = (el: HTMLElement, index: number, removeElement: () => void
   }, index * 50);
 };
 
-
+/** Props for the HabitSettingsPanel component */
 interface HabitSettingsPanelProps {
+  /** The habit to display and edit */
   habit: Habit;
+  /** Callback when the panel is closed without saving */
   onClose: () => void;
+  /** Callback when changes are saved successfully */
   onSave: () => void;
 }
 

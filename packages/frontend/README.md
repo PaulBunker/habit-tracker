@@ -12,7 +12,7 @@ React + Vite web application for the Habit Tracker. Provides the user interface 
 | `src/hooks/useTodayLogs.ts` | Hook for today's completion logs |
 | `src/components/DailyChecklist.tsx` | Main habit list with checkboxes |
 | `src/components/QuickAddHabit.tsx` | Quick habit creation form |
-| `src/components/HabitSettingsPanel.tsx` | Habit configuration modal |
+| `src/components/HabitItem.tsx` | Habit card and modal component |
 | `src/pages/GlobalSettings.tsx` | Blocked websites configuration |
 
 ## Components
@@ -22,9 +22,8 @@ React + Vite web application for the Habit Tracker. Provides the user interface 
 | Component | Description |
 |-----------|-------------|
 | `DailyChecklist` | Lists today's habits with completion status |
-| `ChecklistItem` | Individual habit row with actions |
+| `HabitItem` | Individual habit card that expands to modal |
 | `QuickAddHabit` | Single-field habit creation |
-| `HabitSettingsPanel` | Full habit configuration (deadline, tracking, etc.) |
 | `EmergencyResetButton` | Unblock all websites immediately |
 
 ### Data Visualization
@@ -71,6 +70,13 @@ User Action → Component → API Client → Backend
                 ↓
            Hook refresh → Component re-render
 ```
+
+## Key Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `react-router-dom` | Client-side routing |
+| `zod` | Runtime schema validation |
 
 ## Environment Variables
 

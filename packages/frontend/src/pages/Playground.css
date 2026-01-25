@@ -1,0 +1,100 @@
+.playground {
+  padding: 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.playground h1 {
+  margin-bottom: 2rem;
+  color: #333;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+/* Two-layer title structure for crisp FLIP animation */
+.title-container {
+  display: grid;
+  isolation: isolate; /* scope blend mode */
+  margin: 0 0 0.5rem 0;
+}
+
+.title-container > * {
+  grid-area: 1 / 1; /* stack titles in same cell */
+}
+
+.card__title--small,
+.card__title--large {
+  margin: 0;
+  color: #333;
+  font-weight: 600;
+  transition: none; /* opacity controlled by JS */
+}
+
+.card__title--small {
+  font-size: 1rem;
+}
+
+.card__title--large {
+  font-size: 1.75rem;
+  mix-blend-mode: plus-lighter; /* proper crossfade without 75% opacity dip */
+}
+
+.card__inner p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.modal__inner .title-container {
+  margin-bottom: 1rem;
+}
+
+.modal__inner p {
+  margin: 0 0 1rem 0;
+  color: #666;
+}
+
+.modal__inner button {
+  background: #007aff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.content-box {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+  font-size: 0.9rem;
+}
