@@ -28,6 +28,10 @@ npm run test:e2e                            # Playwright E2E
 npm run test:bdd                            # Cucumber BDD
 npm run test -w @habit-tracker/backend      # Single package
 
+# Type checking (safe - does not modify dist/)
+npm run typecheck                           # All workspaces
+npm run typecheck -w @habit-tracker/frontend # Single package
+
 # Lint & Format
 npm run lint
 npm run format
@@ -87,6 +91,7 @@ npm run daemon:restore
 
 ## Common Issues
 
+- **Checking for type errors during development** - Use `npm run typecheck` instead of `npm run build` to validate TypeScript without overwriting production `dist/` folders
 - **Type errors on build** - Run `npm run build -w @habit-tracker/shared` first
 - **Database locked** - Close other running instances
 - **Tests fail** - Ensure shared package is built

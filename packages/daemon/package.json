@@ -10,6 +10,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
     "install:daemon": "bash ../../scripts/install-daemon.sh",
     "uninstall:daemon": "bash ../../scripts/uninstall-daemon.sh"
   },
