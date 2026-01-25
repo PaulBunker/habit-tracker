@@ -22,6 +22,11 @@ import type {
   AppSettings,
   CalendarDay,
   GraphDataPoint,
+  Project,
+  ProjectWithDetails,
+  CreateProjectRequest,
+  UpdateProjectRequest,
+  LinkHabitsRequest,
 } from '@habit-tracker/shared';
 
 const API_BASE_URL = '/api';
@@ -312,6 +317,104 @@ export const settingsApi = {
  * await statusApi.resetHosts();
  * ```
  */
+/**
+ * API client for project-related operations.
+ *
+ * Provides CRUD operations for projects and habit-project linking.
+ *
+ * @example
+ * ```typescript
+ * // List all projects
+ * const response = await projectsApi.getAll();
+ *
+ * // Create a new project
+ * const result = await projectsApi.create({ name: 'Learn Bass' });
+ * ```
+ */
+export const projectsApi = {
+  /**
+   * Fetches all projects with their linked habit IDs.
+   *
+   * @returns Promise with array of all projects
+   */
+  async getAll(): Promise<ApiResponse<(Project & { habitIds: string[] })[]>> {
+    return fetchApi<(Project & { habitIds: string[] })[]>('/projects');
+  },
+
+  /**
+   * Fetches a single project by ID with its markdown content and linked habits.
+   *
+   * @param id - The project's UUID
+   * @returns Promise with the project details including content
+   */
+  async getById(id: string): Promise<ApiResponse<ProjectWithDetails>> {
+    return fetchApi<ProjectWithDetails>(`/projects/${id}`);
+  },
+
+  /**
+   * Creates a new project.
+   *
+   * @param data - Project creation data (name required, description and content optional)
+   * @returns Promise with the created project
+   */
+  async create(data: CreateProjectRequest): Promise<ApiResponse<ProjectWithDetails>> {
+    return fetchApi<ProjectWithDetails>('/projects', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Updates an existing project.
+   *
+   * @param id - The project's UUID
+   * @param data - Fields to update (all optional)
+   * @returns Promise with the updated project
+   */
+  async update(id: string, data: UpdateProjectRequest): Promise<ApiResponse<ProjectWithDetails>> {
+    return fetchApi<ProjectWithDetails>(`/projects/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Deletes a project and its markdown file.
+   *
+   * @param id - The project's UUID
+   * @returns Promise indicating success or failure
+   */
+  async delete(id: string): Promise<ApiResponse<void>> {
+    return fetchApi<void>(`/projects/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
+   * Sets the habits linked to a project. Replaces existing links.
+   *
+   * @param id - The project's UUID
+   * @param habitIds - Array of habit IDs to link
+   * @returns Promise with the updated project
+   */
+  async linkHabits(id: string, data: LinkHabitsRequest): Promise<ApiResponse<ProjectWithDetails>> {
+    return fetchApi<ProjectWithDetails>(`/projects/${id}/habits`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Gets the habits linked to a project.
+   *
+   * @param id - The project's UUID
+   * @returns Promise with array of linked habits
+   */
+  async getLinkedHabits(id: string): Promise<ApiResponse<Habit[]>> {
+    return fetchApi<Habit[]>(`/projects/${id}/habits`);
+  },
+};
+
 export const statusApi = {
   /**
    * Fetches current daemon status.

@@ -3,6 +3,7 @@ import cors from 'cors';
 import habitsRouter from './routes/habits';
 import settingsRouter from './routes/settings';
 import statusRouter from './routes/status';
+import projectsRouter from './routes/projects';
 import { errorHandler } from './middleware/error-handler';
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(express.json());
 // Routes
 app.use('/api/habits', habitsRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/projects', projectsRouter);
 app.use('/api', statusRouter);
 
 // Health check
