@@ -12,7 +12,7 @@ React + Vite web application for the Habit Tracker. Provides the user interface 
 | `src/hooks/useTodayLogs.ts` | Hook for today's completion logs |
 | `src/components/DailyChecklist.tsx` | Main habit list with checkboxes |
 | `src/components/QuickAddHabit.tsx` | Quick habit creation form |
-| `src/components/HabitSettingsPanel.tsx` | Habit configuration modal |
+| `src/components/HabitItem.tsx` | Habit card and modal component |
 | `src/pages/GlobalSettings.tsx` | Blocked websites configuration |
 
 ## Components
@@ -22,9 +22,8 @@ React + Vite web application for the Habit Tracker. Provides the user interface 
 | Component | Description |
 |-----------|-------------|
 | `DailyChecklist` | Lists today's habits with completion status |
-| `ChecklistItem` | Individual habit row with actions |
+| `HabitItem` | Individual habit card that expands to modal |
 | `QuickAddHabit` | Single-field habit creation |
-| `HabitSettingsPanel` | Full habit configuration (deadline, tracking, etc.) |
 | `EmergencyResetButton` | Unblock all websites immediately |
 
 ### Data Visualization
@@ -76,20 +75,8 @@ User Action → Component → API Client → Backend
 
 | Package | Purpose |
 |---------|---------|
-| `react-flip-toolkit` | FLIP animations for smooth card-to-modal transitions |
 | `react-router-dom` | Client-side routing |
 | `zod` | Runtime schema validation |
-
-### FLIP Animations
-
-The `HabitSettingsPanel` uses [react-flip-toolkit](https://github.com/aholachek/react-flip-toolkit) for smooth modal animations. When a habit item is clicked, it morphs into the settings modal using the FLIP (First, Last, Invert, Play) technique.
-
-Key animation callbacks in `HabitSettingsPanel.tsx`:
-- `onOverlayAppear` - Fades in the modal backdrop
-- `onContentAppear` - Staggers form fields into view
-- `onContentExit` - Staggers form fields out before close
-
-See `FLIP_LEARNINGS.md` in the repo root for implementation details.
 
 ## Environment Variables
 

@@ -4,9 +4,8 @@
  * @packageDocumentation
  */
 
-import { Flipped } from 'react-flip-toolkit';
 import type { Habit, HabitLog } from '@habit-tracker/shared';
-import { ChecklistItem } from './ChecklistItem';
+import { HabitItem } from './HabitItem';
 
 /**
  * Props for the DailyChecklist component.
@@ -18,10 +17,14 @@ interface DailyChecklistProps {
   todayLogs: Record<string, HabitLog | undefined>;
   /** Callback when any habit status changes */
   onUpdate: () => void;
-  /** Callback to open settings for a specific habit */
-  onOpenSettings: (habit: Habit) => void;
-  /** ID of the currently selected habit (for FLIP animation) */
+  /** Callback when changes are saved (habit created/updated/deleted) */
+  onSave: () => void;
+  /** ID of the currently selected/expanded habit */
   selectedHabitId: string | null;
+  /** Callback to select/expand a habit */
+  onSelectHabit: (habitId: string | null) => void;
+  /** Callback to close the modal */
+  onCloseHabit: () => void;
 }
 
 /**
@@ -30,33 +33,16 @@ interface DailyChecklistProps {
  * Filters habits to only show those active on the current day of the week,
  * then splits them into "To Do" (pending/missed) and "Done" (completed/skipped)
  * sections. Shows empty states when no habits exist or none are scheduled.
- *
- * @param props - Component props
- * @returns The rendered daily checklist
- *
- * @example
- * ```tsx
- * function App() {
- *   const { habits, refresh: refreshHabits } = useHabits();
- *   const { logs, refresh: refreshLogs } = useTodayLogs(habits.map(h => h.id));
- *
- *   const handleUpdate = () => {
- *     refreshHabits();
- *     refreshLogs();
- *   };
- *
- *   return (
- *     <DailyChecklist
- *       habits={habits}
- *       todayLogs={logs}
- *       onUpdate={handleUpdate}
- *       onOpenSettings={(h) => openSettingsPanel(h)}
- *     />
- *   );
- * }
- * ```
  */
-export function DailyChecklist({ habits, todayLogs, onUpdate, onOpenSettings, selectedHabitId }: DailyChecklistProps) {
+export function DailyChecklist({
+  habits,
+  todayLogs,
+  onUpdate,
+  onSave,
+  selectedHabitId,
+  onSelectHabit,
+  onCloseHabit,
+}: DailyChecklistProps): JSX.Element | null {
   // Check if habit is active today based on activeDays
   const isActiveToday = (habit: Habit): boolean => {
     if (!habit.activeDays || habit.activeDays.length === 0) {
@@ -79,6 +65,11 @@ export function DailyChecklist({ habits, todayLogs, onUpdate, onOpenSettings, se
     const log = todayLogs[habit.id];
     return log && (log.status === 'completed' || log.status === 'skipped');
   });
+
+  // Find the expanded habit (if any)
+  const expandedHabit = selectedHabitId
+    ? habits.find((h) => h.id === selectedHabitId)
+    : null;
 
   if (habits.length === 0) {
     return (
@@ -103,27 +94,19 @@ export function DailyChecklist({ habits, todayLogs, onUpdate, onOpenSettings, se
           <h3 className="checklist-section-title">To Do</h3>
           <div className="checklist-items">
             {pendingHabits.map((habit) => (
-              <Flipped
+              <HabitItem
                 key={habit.id}
-                flipId={`habit-${habit.id}`}
-                shouldFlip={(prev, curr) => {
-                  // Only animate if this item is being selected or deselected
-                  const prevId = (prev as { selectedHabitId: string | null })?.selectedHabitId;
-                  const currId = (curr as { selectedHabitId: string | null })?.selectedHabitId;
-                  return prevId === habit.id || currId === habit.id;
+                habit={habit}
+                todayLog={todayLogs[habit.id]}
+                isExpanded={habit.id === selectedHabitId}
+                onExpand={() => onSelectHabit(habit.id)}
+                onCollapse={onCloseHabit}
+                onUpdate={onUpdate}
+                onSave={() => {
+                  onSelectHabit(null);
+                  onSave();
                 }}
-              >
-                <div>
-                  <ChecklistItem
-                    habit={habit}
-                    todayLog={todayLogs[habit.id]}
-                    onUpdate={onUpdate}
-                    onOpenSettings={onOpenSettings}
-                    isSelected={habit.id === selectedHabitId}
-                    flipId={`habit-${habit.id}`}
-                  />
-                </div>
-              </Flipped>
+              />
             ))}
           </div>
         </div>
@@ -134,30 +117,38 @@ export function DailyChecklist({ habits, todayLogs, onUpdate, onOpenSettings, se
           <h3 className="checklist-section-title">Done</h3>
           <div className="checklist-items">
             {completedHabits.map((habit) => (
-              <Flipped
+              <HabitItem
                 key={habit.id}
-                flipId={`habit-${habit.id}`}
-                shouldFlip={(prev, curr) => {
-                  // Only animate if this item is being selected or deselected
-                  const prevId = (prev as { selectedHabitId: string | null })?.selectedHabitId;
-                  const currId = (curr as { selectedHabitId: string | null })?.selectedHabitId;
-                  return prevId === habit.id || currId === habit.id;
+                habit={habit}
+                todayLog={todayLogs[habit.id]}
+                isExpanded={habit.id === selectedHabitId}
+                onExpand={() => onSelectHabit(habit.id)}
+                onCollapse={onCloseHabit}
+                onUpdate={onUpdate}
+                onSave={() => {
+                  onSelectHabit(null);
+                  onSave();
                 }}
-              >
-                <div>
-                  <ChecklistItem
-                    habit={habit}
-                    todayLog={todayLogs[habit.id]}
-                    onUpdate={onUpdate}
-                    onOpenSettings={onOpenSettings}
-                    isSelected={habit.id === selectedHabitId}
-                    flipId={`habit-${habit.id}`}
-                  />
-                </div>
-              </Flipped>
+              />
             ))}
           </div>
         </div>
+      )}
+
+      {/* Render expanded habit modal if selected habit is not in active habits */}
+      {expandedHabit && !activeHabits.find((h) => h.id === expandedHabit.id) && (
+        <HabitItem
+          habit={expandedHabit}
+          todayLog={todayLogs[expandedHabit.id]}
+          isExpanded={true}
+          onExpand={() => {}}
+          onCollapse={onCloseHabit}
+          onUpdate={onUpdate}
+          onSave={() => {
+            onSelectHabit(null);
+            onSave();
+          }}
+        />
       )}
     </div>
   );

@@ -157,19 +157,11 @@
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
-/* Ghost placeholder for FLIP animation - maintains space while item becomes modal */
+/* Ghost placeholder - maintains list space when modal is open */
 .checklist-item--ghost {
   visibility: hidden;
   pointer-events: none;
   min-height: 59px;
-}
-
-/* Inner wrapper for FLIP inverse scale */
-.checklist-item__inner {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
 }
 
 .checklist-item--completed {
@@ -293,6 +285,7 @@
 .checklist-settings:hover {
   opacity: 1;
 }
+
 
 /* Data Input Overlay */
 .data-input-overlay {
@@ -437,6 +430,14 @@
   z-index: 1000;
 }
 
+/* Backdrop - covers screen, handles click-outside (separate from morphing element) */
+.modal-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
 .modal {
   position: relative;
   background: var(--background);
@@ -476,41 +477,6 @@
   color: var(--text-primary);
 }
 
-/* Two-layer title for FLIP animation crossfade */
-.title-container {
-  display: grid;
-  isolation: isolate;
-  margin-bottom: 1rem;
-}
-
-.title-container > * {
-  grid-area: 1 / 1;
-}
-
-.modal-title--small,
-.modal-title--large {
-  margin: 0;
-  font-weight: 600;
-  color: var(--text-primary);
-  transition: none;
-}
-
-.modal-title--small {
-  font-size: 1rem; /* Match .checklist-name */
-}
-
-.modal-title--large {
-  font-size: 1.25rem; /* Match old .modal-header h2 */
-  mix-blend-mode: plus-lighter;
-}
-
-/* Header actions - positioned absolutely so close button doesn't push title down */
-.modal-header-actions {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 1;
-}
 
 /* Back Button */
 .back-btn {
@@ -541,7 +507,7 @@
   width: 100%;
 }
 
-/* View overlay for calendar/graph (animated via FLIP) */
+/* View overlay for calendar/graph */
 .view-overlay {
   position: fixed;
   top: 0;
