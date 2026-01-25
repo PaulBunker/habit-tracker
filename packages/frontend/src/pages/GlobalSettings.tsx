@@ -7,6 +7,7 @@ import { settingsApi } from '../api/client';
 export function GlobalSettings() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [websiteInput, setWebsiteInput] = useState('');
   const [error, setError] = useState('');
 
@@ -39,25 +40,36 @@ export function GlobalSettings() {
     }
 
     try {
+      setSaving(true);
+      setError('');
       const response = await settingsApi.addBlockedWebsite(website);
       if (response.success && response.data) {
         setSettings({ ...settings!, blockedWebsites: response.data.blockedWebsites });
         setWebsiteInput('');
-        setError('');
+      } else {
+        setError(response.error || 'Failed to add website');
       }
     } catch {
       setError('Failed to add website');
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleRemoveWebsite = async (website: string) => {
     try {
+      setSaving(true);
+      setError('');
       const response = await settingsApi.removeBlockedWebsite(website);
       if (response.success && response.data) {
         setSettings({ ...settings!, blockedWebsites: response.data.blockedWebsites });
+      } else {
+        setError(response.error || 'Failed to remove website');
       }
     } catch {
       setError('Failed to remove website');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -91,8 +103,12 @@ export function GlobalSettings() {
             <input
               type="text"
               value={websiteInput}
-              onChange={(e) => setWebsiteInput(e.target.value)}
+              onChange={(e) => {
+                setWebsiteInput(e.target.value);
+                if (error) setError('');
+              }}
               placeholder="e.g., reddit.com"
+              disabled={saving}
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -100,8 +116,8 @@ export function GlobalSettings() {
                 }
               }}
             />
-            <button className="btn btn-primary" onClick={handleAddWebsite}>
-              Add
+            <button className="btn btn-primary" onClick={handleAddWebsite} disabled={saving}>
+              {saving ? 'Saving...' : 'Add'}
             </button>
           </div>
 
@@ -116,6 +132,7 @@ export function GlobalSettings() {
                     className="remove-btn"
                     onClick={() => handleRemoveWebsite(website)}
                     title="Remove"
+                    disabled={saving}
                   >
                     ×
                   </button>
