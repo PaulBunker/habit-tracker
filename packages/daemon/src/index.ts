@@ -7,6 +7,12 @@ import {
   getBlockedDomains,
 } from './hosts-manager';
 import { startSocketServer, stopSocketServer } from './socket-server';
+import {
+  isBypassActive,
+  getBypassState,
+  activateBypass,
+  cancelBypass,
+} from './state-manager';
 import net from 'net';
 
 const CHECK_INTERVAL = 60 * 1000; // 60 seconds (fallback - deadlines use precise timers)
@@ -59,6 +65,15 @@ async function scheduleNextDeadline(): Promise<void> {
 async function checkAndUpdate(): Promise<void> {
   log('Checking habits...');
 
+  // Check if bypass is active - skip blocking during bypass period
+  if (isBypassActive()) {
+    const state = getBypassState();
+    log(`Bypass active - ${Math.round(state.remainingMinutes)} minutes remaining. Skipping blocking.`);
+    // Still schedule next deadline timer
+    await scheduleNextDeadline();
+    return;
+  }
+
   const result = await checkHabits();
 
   if (result.incompleteTimedHabits.length > 0) {
@@ -110,6 +125,18 @@ async function run(): Promise<void> {
       log('Emergency reset triggered - clearing all blocked hosts');
       updateHostsFile([]);
     },
+    onBypass: async (durationMinutes: number) => {
+      const state = activateBypass(durationMinutes);
+      // Clear hosts immediately when bypass starts
+      updateHostsFile([]);
+      return state;
+    },
+    onBypassCancel: async () => {
+      cancelBypass();
+      // Re-evaluate blocking immediately after cancellation
+      await checkAndUpdate();
+    },
+    onBypassStatus: () => getBypassState(),
   });
 
   // Fallback polling loop (for time-based triggers like deadlines)

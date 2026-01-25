@@ -112,6 +112,22 @@ export interface UpdateHabitLogRequest {
   dataValue: number;
 }
 
+/** Bypass state for emergency reset functionality */
+export interface BypassState {
+  /** ISO 8601 timestamp when bypass expires, null if not active */
+  bypassUntil: string | null;
+  /** Minutes remaining in bypass period, 0 if not active */
+  remainingMinutes: number;
+  /** Whether bypass is currently active */
+  isActive: boolean;
+}
+
+/** Request body for activating emergency bypass */
+export interface ActivateBypassRequest {
+  /** Duration in minutes (default: 30, max: 120) */
+  durationMinutes?: number;
+}
+
 /** Current status of the blocking daemon. */
 export interface DaemonStatus {
   isRunning: boolean;
@@ -120,6 +136,8 @@ export interface DaemonStatus {
   blockedDomains: string[];
   /** Habit IDs currently triggering blocking (overdue) */
   activeHabits: string[];
+  /** Bypass state (present if daemon supports bypass) */
+  bypass?: BypassState;
 }
 
 /** Standard API response wrapper. */

@@ -8,7 +8,15 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { notifyDaemon, pingDaemon, resetHosts } from '@habit-tracker/shared/daemon-client';
+import {
+  notifyDaemon,
+  pingDaemon,
+  resetHosts,
+  activateBypass,
+  cancelBypass,
+  getBypassStatus,
+} from '@habit-tracker/shared/daemon-client';
+import type { ActivateBypassRequest } from '@habit-tracker/shared';
 
 const router = Router();
 
@@ -134,6 +142,144 @@ router.post('/daemon/reset', async (_req: Request, res: Response, next: NextFunc
     res.json({
       success,
       message: success ? 'Hosts file reset successfully' : 'Daemon not reachable or reset failed',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/daemon/bypass
+ *
+ * Activates emergency bypass for a specified duration.
+ *
+ * During the bypass period, the daemon will not re-block websites even if
+ * habits become overdue. Use this when guaranteed uninterrupted access is needed.
+ *
+ * @param {ActivateBypassRequest} body - Request body with optional durationMinutes
+ * @returns {{success: boolean, data?: {message: string, bypass: BypassState}}} Bypass result
+ *
+ * @example Request body
+ * ```json
+ * { "durationMinutes": 60 }
+ * ```
+ *
+ * @example Response (200 OK) - Success
+ * ```json
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "message": "Bypass activated for 60 minutes",
+ *     "bypass": {
+ *       "bypassUntil": "2024-01-15T15:30:00Z",
+ *       "remainingMinutes": 60,
+ *       "isActive": true
+ *     }
+ *   }
+ * }
+ * ```
+ */
+router.post('/daemon/bypass', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { durationMinutes = 30 } = req.body as ActivateBypassRequest;
+
+    // Validate duration
+    if (durationMinutes < 1 || durationMinutes > 120) {
+      res.status(400).json({
+        success: false,
+        error: 'Duration must be between 1 and 120 minutes',
+      });
+      return;
+    }
+
+    const bypassState = await activateBypass(durationMinutes);
+
+    if (bypassState) {
+      res.json({
+        success: true,
+        data: {
+          message: `Bypass activated for ${durationMinutes} minutes`,
+          bypass: bypassState,
+        },
+      });
+    } else {
+      res.json({
+        success: false,
+        message: 'Daemon not reachable',
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * DELETE /api/daemon/bypass
+ *
+ * Cancels any active emergency bypass.
+ *
+ * Normal blocking will resume immediately - websites will be re-blocked
+ * if any habits are overdue.
+ *
+ * @returns {{success: boolean, message: string}} Cancel result
+ *
+ * @example Response (200 OK) - Success
+ * ```json
+ * {
+ *   "success": true,
+ *   "message": "Bypass cancelled"
+ * }
+ * ```
+ */
+router.delete('/daemon/bypass', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const success = await cancelBypass();
+    res.json({
+      success,
+      message: success ? 'Bypass cancelled' : 'Daemon not reachable',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/daemon/bypass
+ *
+ * Gets the current bypass status.
+ *
+ * @returns {{success: boolean, data: BypassState}} Current bypass state
+ *
+ * @example Response (200 OK) - Bypass active
+ * ```json
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "bypassUntil": "2024-01-15T15:30:00Z",
+ *     "remainingMinutes": 25.5,
+ *     "isActive": true
+ *   }
+ * }
+ * ```
+ *
+ * @example Response (200 OK) - No active bypass
+ * ```json
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "bypassUntil": null,
+ *     "remainingMinutes": 0,
+ *     "isActive": false
+ *   }
+ * }
+ * ```
+ */
+router.get('/daemon/bypass', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const bypassState = await getBypassStatus();
+    res.json({
+      success: true,
+      data: bypassState || { isActive: false, bypassUntil: null, remainingMinutes: 0 },
     });
   } catch (error) {
     next(error);

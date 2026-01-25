@@ -22,6 +22,7 @@ import type {
   AppSettings,
   CalendarDay,
   GraphDataPoint,
+  BypassState,
 } from '@habit-tracker/shared';
 
 const API_BASE_URL = '/api';
@@ -351,5 +352,44 @@ export const statusApi = {
     return fetchApi<{ message: string }>('/daemon/reset', {
       method: 'POST',
     });
+  },
+
+  /**
+   * Activates emergency bypass for the specified duration.
+   *
+   * During the bypass period, websites remain unblocked even if habits
+   * become overdue. Use this when guaranteed uninterrupted access is needed.
+   *
+   * @param durationMinutes - Duration in minutes (1-120, default 30)
+   * @returns Promise with bypass state
+   */
+  async activateBypass(durationMinutes: number = 30): Promise<ApiResponse<{ message: string; bypass: BypassState }>> {
+    return fetchApi<{ message: string; bypass: BypassState }>('/daemon/bypass', {
+      method: 'POST',
+      body: JSON.stringify({ durationMinutes }),
+    });
+  },
+
+  /**
+   * Cancels any active emergency bypass.
+   *
+   * Normal blocking resumes immediately - websites will be re-blocked
+   * if any habits are overdue.
+   *
+   * @returns Promise with success message
+   */
+  async cancelBypass(): Promise<ApiResponse<{ message: string }>> {
+    return fetchApi<{ message: string }>('/daemon/bypass', {
+      method: 'DELETE',
+    });
+  },
+
+  /**
+   * Gets the current bypass status.
+   *
+   * @returns Promise with current bypass state
+   */
+  async getBypassStatus(): Promise<ApiResponse<BypassState>> {
+    return fetchApi<BypassState>('/daemon/bypass');
   },
 };

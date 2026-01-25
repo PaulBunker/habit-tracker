@@ -2,6 +2,7 @@ import net from 'net';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
+import type { BypassState } from '@habit-tracker/shared';
 import { log } from './hosts-manager';
 
 const DEFAULT_SOCKET_PATH = path.join(os.homedir(), '.habit-tracker', 'daemon.sock');
@@ -9,11 +10,21 @@ const DEFAULT_SOCKET_PATH = path.join(os.homedir(), '.habit-tracker', 'daemon.so
 export interface SocketServerOptions {
   onRefresh: () => Promise<void>;
   onReset: () => Promise<void>;
+  onBypass: (durationMinutes: number) => Promise<BypassState>;
+  onBypassCancel: () => Promise<void>;
+  onBypassStatus: () => BypassState;
   socketPath?: string; // For testing
 }
 
 export function startSocketServer(options: SocketServerOptions): net.Server {
-  const { onRefresh, onReset, socketPath = DEFAULT_SOCKET_PATH } = options;
+  const {
+    onRefresh,
+    onReset,
+    onBypass,
+    onBypassCancel,
+    onBypassStatus,
+    socketPath = DEFAULT_SOCKET_PATH,
+  } = options;
 
   // Clean up stale socket file if exists
   if (fs.existsSync(socketPath)) {
@@ -39,6 +50,33 @@ export function startSocketServer(options: SocketServerOptions): net.Server {
         }
       } else if (message === 'ping') {
         socket.write('pong\n');
+      } else if (message.startsWith('bypass ')) {
+        const parts = message.split(' ');
+        const minutes = parseInt(parts[1], 10);
+        if (isNaN(minutes) || minutes < 1 || minutes > 120) {
+          socket.write('error: invalid duration (1-120 minutes)\n');
+        } else {
+          log(`Received bypass request for ${minutes} minutes`);
+          try {
+            const state = await onBypass(minutes);
+            socket.write(JSON.stringify(state) + '\n');
+          } catch (error) {
+            log(`Bypass activation failed: ${error}`, 'error');
+            socket.write('error: bypass activation failed\n');
+          }
+        }
+      } else if (message === 'bypass-cancel') {
+        log('Received bypass cancel request');
+        try {
+          await onBypassCancel();
+          socket.write('ok\n');
+        } catch (error) {
+          log(`Bypass cancel failed: ${error}`, 'error');
+          socket.write('error: bypass cancel failed\n');
+        }
+      } else if (message === 'bypass-status') {
+        const state = onBypassStatus();
+        socket.write(JSON.stringify(state) + '\n');
       } else {
         socket.write('error: unknown command\n');
       }
