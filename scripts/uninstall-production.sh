@@ -14,19 +14,20 @@ PROJECT_DIR=$(cd "$(dirname "$0")/.." && pwd)
 LAUNCH_AGENTS_DIR="$HOME_DIR/Library/LaunchAgents"
 
 # Step 1: Restore hosts file (remove any blocked entries)
-echo "[1/3] Restoring hosts file..."
+echo "[1/4] Restoring hosts file..."
 if [ -f "$PROJECT_DIR/scripts/restore-hosts.sh" ]; then
     bash "$PROJECT_DIR/scripts/restore-hosts.sh" || true
 fi
 
 # Step 2: Unload and remove services
 echo ""
-echo "[2/3] Stopping and removing services..."
+echo "[2/4] Stopping and removing services..."
 
 SERVICES=(
     "com.habit-tracker.daemon"
     "com.habit-tracker.backend"
     "com.habit-tracker.frontend"
+    "com.habit-tracker.caddy"
 )
 
 for SERVICE in "${SERVICES[@]}"; do
@@ -39,9 +40,28 @@ for SERVICE in "${SERVICES[@]}"; do
     fi
 done
 
-# Step 3: Ask about data removal
+# Step 3: Ask about /etc/hosts cleanup
 echo ""
-echo "[3/3] Data cleanup..."
+echo "[3/4] Cleaning up /etc/hosts..."
+if grep -q "habits.localhost" /etc/hosts 2>/dev/null; then
+    read -p "Remove habits.localhost entries from /etc/hosts? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Removing habits.localhost entries (requires sudo)..."
+        sudo sed -i '' '/habits\.localhost/d' /etc/hosts
+        sudo dscacheutil -flushcache 2>/dev/null || true
+        sudo killall -HUP mDNSResponder 2>/dev/null || true
+        echo "  ✓ Removed habits.localhost entries"
+    else
+        echo "  Keeping habits.localhost entries in /etc/hosts"
+    fi
+else
+    echo "  No habits.localhost entries found in /etc/hosts"
+fi
+
+# Step 4: Ask about data removal
+echo ""
+echo "[4/4] Data cleanup..."
 echo ""
 echo "The following directories contain your habit data and logs:"
 echo "  ~/.habit-tracker/data    (database)"
