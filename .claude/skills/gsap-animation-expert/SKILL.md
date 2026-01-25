@@ -6,10 +6,18 @@ description: Comprehensive GSAP animation skill covering Flip plugin, Timeline, 
 # GSAP Animation Expert
 
 Use this skill when implementing animations with GSAP, especially for:
-- Card-to-modal morphing (FLIP animations)
+- FLIP animations (layout transitions)
 - Timeline-based sequencing
 - Staggered content animations
 - React component animations with proper cleanup
+
+## Sources
+
+To refresh this skill, spawn Explore agents in parallel to check each URL:
+- [GSAP Core Docs](https://gsap.com/docs/v3/)
+- [Flip Plugin](https://gsap.com/docs/v3/Plugins/Flip/)
+- [@gsap/react](https://www.npmjs.com/package/@gsap/react)
+- [GSAP React Guide](https://gsap.com/resources/React/)
 
 ## Installation
 
@@ -104,75 +112,6 @@ Flip enables seamless transitions between DOM states. The technique:
 | `Flip.to(state, options)` | Animate TO captured state from current |
 | `Flip.fit(target, destination)` | Resize/reposition element to match another |
 
-### Card-to-Modal Animation Pattern
-
-```tsx
-function CardModal() {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  const { contextSafe } = useGSAP();
-
-  const openModal = contextSafe(() => {
-    // 1. Capture card state before changes
-    const state = Flip.getState(cardRef.current);
-
-    // 2. Toggle expanded state (triggers re-render)
-    setIsExpanded(true);
-
-    // 3. Wait for DOM update, then animate
-    requestAnimationFrame(() => {
-      Flip.from(state, {
-        duration: 0.3,
-        ease: 'power2.out',
-        absolute: true, // Prevents layout shift during animation
-        onComplete: () => {
-          // Fade in content after morph completes
-          gsap.from('.modal-content > *', {
-            opacity: 0,
-            y: 10,
-            stagger: 0.05,
-            duration: 0.2,
-            ease: 'power2.out'
-          });
-        }
-      });
-    });
-  });
-
-  const closeModal = contextSafe(() => {
-    // 1. Fade out content first (reverse order)
-    const contentTl = gsap.timeline();
-    contentTl.to('.modal-content > *', {
-      opacity: 0,
-      y: -10,
-      stagger: { each: 0.03, from: 'end' },
-      duration: 0.15
-    });
-
-    contentTl.call(() => {
-      // 2. Capture modal state
-      const state = Flip.getState(modalRef.current);
-
-      // 3. Toggle state
-      setIsExpanded(false);
-
-      // 4. Animate back to card
-      requestAnimationFrame(() => {
-        Flip.from(state, {
-          duration: 0.3,
-          ease: 'power2.out',
-          absolute: true
-        });
-      });
-    });
-  });
-
-  return (/* JSX */);
-}
-```
-
 ### Key Flip Options
 
 | Option | Type | Purpose |
@@ -192,11 +131,11 @@ function CardModal() {
 Use `data-flip-id` to match elements between states:
 
 ```tsx
-// Card view
-<div data-flip-id="habit-title" className="card-title">{title}</div>
+// List view
+<div data-flip-id="item-title" className="card-title">{title}</div>
 
-// Modal view (same data-flip-id)
-<h2 data-flip-id="habit-title" className="modal-title">{title}</h2>
+// Expanded view (same data-flip-id)
+<h2 data-flip-id="item-title" className="detail-title">{title}</h2>
 ```
 
 Flip will automatically morph between them.
