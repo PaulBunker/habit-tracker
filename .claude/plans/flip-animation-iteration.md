@@ -355,7 +355,90 @@ Filmstrips confirm the fix:
 - Clear position change (traveling through space) rather than scale change (zooming)
 
 ### Status
-**FIXED** - Title now floats instead of scales.
+**PARTIAL** - Title no longer zooms, but is squashed in early frames (52-103ms).
+
+~~<promise>ANIMATION_COMPLETE</promise>~~ REVOKED - Title squashing issue found.
+
+### Issue Found on Review
+Human review of filmstrip revealed title is **squashed/vertically compressed** in frames 52-103ms of open animation. The title distortion was missed in initial verification.
+
+**Frame-by-frame observation:**
+| Frames | Title Appearance |
+|--------|------------------|
+| 0-26ms | Normal (card list) |
+| 52-77ms | **SQUASHED** - vertically compressed |
+| 103-155ms | **SQUASHED** - still distorted |
+| 181-232ms | Transitioning to normal |
+| 258ms+ | Normal (modal header) |
+
+**Root cause hypothesis:** Title is inheriting scale transforms from the parent container which is being FLIP-animated. Even though title has its own animation, it's still a child of the scaled container.
+
+---
+
+## Iteration 7 (2026-01-26 00:55) - Title Extraction Fix
+
+### Frame-by-Frame Analysis (Before)
+Title was squashed in frames 52-155ms because it inherited parent container's scale transforms.
+
+| Frames | Title Appearance |
+|--------|------------------|
+| 0-26ms | Normal (card list) |
+| 52-77ms | **SQUASHED** - vertically compressed |
+| 103-155ms | **SQUASHED** - still distorted |
+| 181-232ms | Transitioning to normal |
+| 258ms+ | Normal (modal header) |
+
+### Diagnosis
+The title element is a child of the modal container. When FLIP animates the container with `scale: true`, it applies `scaleX`/`scaleY` transforms to morph from card size to modal size. The title inherits these transforms even though it has its own independent animation, causing the squashing effect.
+
+### Solution: Title Extraction
+Extract the title from the container's transform hierarchy by making it `position: fixed` during the animation:
+
+1. **Before animation starts**: Set title to `position: fixed` at its current screen coordinates
+2. **During animation**: Title animates independently (not affected by parent scale)
+3. **On animation complete**: Restore title to normal document flow
+
+### Changes Made
+**Open animation (HabitItem.tsx lines 126-175):**
+- Store original title styles
+- Extract title with `position: fixed` at card title's screen position
+- Animate `top`, `left`, `width` to modal title position
+- Restore original styles in `onComplete`
+
+**Close animation (HabitItem.tsx lines 397-432):**
+- Same extraction technique for close direction
+- Animate from modal header position toward card position
+- Fade out as it lands
+
+### Frame-by-Frame Analysis (After)
+| Frames | Title Appearance |
+|--------|------------------|
+| 0-26ms | Normal (card list) |
+| 52-77ms | **NORMAL** - title readable, not squashed |
+| 103-155ms | **NORMAL** - maintaining aspect ratio |
+| 181-232ms | **NORMAL** - consistent proportions |
+| 258ms+ | **NORMAL** - settled in modal header |
+
+**Close animation frames also verified:**
+| Frames | Title Appearance |
+|--------|------------------|
+| 50ms | **NORMAL** - title in header position |
+| 150ms | **NORMAL** - floating, not squashed |
+| 250ms | **NORMAL** - approaching card position |
+
+### Verification Checklist
+- [x] Frame 52ms: Title NOT squashed
+- [x] Frame 77ms: Title NOT squashed
+- [x] Frame 103ms: Title NOT squashed
+- [x] Frame 129ms: Title NOT squashed
+- [x] Frame 155ms: Title NOT squashed
+- [x] ALL frames: Title aspect ratio is natural
+- [x] ALL frames: Title text is readable
+- [x] Open animation: Title floats from card to modal header
+- [x] Close animation: Title floats from modal header to card
+
+### Status
+**FIXED** - Title maintains normal proportions throughout both open and close animations.
 
 <promise>ANIMATION_COMPLETE</promise>
 
