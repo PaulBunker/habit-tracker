@@ -454,6 +454,51 @@ Extract the title from the container's transform hierarchy by making it `positio
 
 ---
 
+## Recommended Solution: Clone-Based Hero Animation
+
+Research found the safest pattern. See `.claude/skills/gsap-animation-expert/examples/flip-hero-title.tsx` for full examples.
+
+**The Pattern:**
+1. BEFORE transition: Capture card title position with `getBoundingClientRect()`
+2. Create a CLONE of the title, position it at card title's screen coordinates
+3. Keep modal title IN THE DOM but set `opacity: 0` (preserves layout, X button doesn't jump)
+4. Animate the clone from card position to modal header position
+5. On complete: remove clone, set modal title `opacity: 1`
+
+**Why this works:**
+- Clone is appended to `document.body` → not a child of scaled container → no squashing
+- Clone starts at exact card title position → not in center of screen
+- Modal title stays in DOM → X button layout unchanged → no jumping
+
+```tsx
+// Create clone at card title position
+const clone = document.createElement('h2');
+clone.textContent = title;
+clone.style.cssText = `
+  position: fixed;
+  top: ${cardTitleRect.top}px;
+  left: ${cardTitleRect.left}px;
+  z-index: 10001;
+`;
+document.body.appendChild(clone);
+
+// Hide modal title (but keep in DOM!)
+modalTitle.style.opacity = '0';
+
+// Animate clone to modal header position
+gsap.to(clone, {
+  top: modalTitleRect.top,
+  left: modalTitleRect.left,
+  duration: 0.4,
+  onComplete: () => {
+    clone.remove();
+    modalTitle.style.opacity = '1';
+  }
+});
+```
+
+---
+
 ## Context Recovery Instructions
 
 If starting fresh:
