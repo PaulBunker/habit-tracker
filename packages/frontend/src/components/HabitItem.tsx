@@ -108,7 +108,7 @@ export function HabitItem({
     const state = flipStateRef.current;
     const titleRect = titleRectRef.current;
     flipStateRef.current = null;
-    titleRectRef.current = null;
+    // Keep titleRectRef for close animation - it has the card title's exact position
     isAnimatingRef.current = true;
 
     const modal = modalRef.current;
@@ -382,16 +382,16 @@ export function HabitItem({
       // Get title elements for independent title animation
       const modalTitle = modal.querySelector('[data-flip-id^="title-"]') as HTMLElement;
 
-      // Calculate where modal title is vs where card title will be
-      // The card title is inside the ghost at approximately the same relative position
-      const CHECKBOX_WIDTH = 48;  // Checkbox + gap spacing
-      const VERTICAL_OFFSET = 10; // Fine-tune vertical centering
-      const cardTitleLeft = ghostRect.left + CHECKBOX_WIDTH;
-      const cardTitleTop = ghostRect.top + (ghostRect.height / 2) - VERTICAL_OFFSET;
+      // Use the card title's exact position captured when opening
+      // This avoids magic numbers and ensures pixel-perfect animation
+      const cardTitleRect = titleRectRef.current;
+      const cardTitleLeft = cardTitleRect?.left ?? ghostRect.left + 48;
+      const cardTitleTop = cardTitleRect?.top ?? ghostRect.top + 20;
 
       const tl = gsap.timeline({
         onComplete: () => {
           isAnimatingRef.current = false;
+          titleRectRef.current = null; // Clear for next open/close cycle
           onCollapse();
         },
       });
