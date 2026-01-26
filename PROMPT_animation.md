@@ -1,4 +1,4 @@
-# FLIP Animation Fix - Ralph Wiggum Loop
+# FLIP Animation Polish - Title Float Effect
 
 ## Context Recovery
 
@@ -9,35 +9,31 @@
 
 ## Resources
 
-**For Guidance:** Use `/gsap-animation-expert` skill - it has FLIP plugin patterns, `data-flip-id` matching, `useGSAP` React patterns, and common solutions.
+**For Guidance:** Use `/gsap-animation-expert` skill - it has FLIP plugin patterns, `data-flip-id` matching, and element morphing techniques.
 
-**For Feedback:** Use `scripts/capture-animation-unified.js` - the filmstrips are ground truth. Don't guess if the animation works; capture and look.
+**For Feedback:** Use `scripts/capture-animation-unified.js` - the filmstrips are ground truth. Don't guess; capture and look.
 
 ---
 
 ## Goal
 
-Fix the FLIP animation in HabitItem.tsx to achieve a card-to-modal morph effect.
+Polish the title animation so it **floats/morphs** rather than **scales/zooms**.
 
-### Intended Animation (when working correctly)
+### Current Behavior (wrong)
+The title **scales** during the animation:
+- Open: Title starts small and grows larger (zoom in effect)
+- Close: Title shrinks from large to small (zoom out effect)
 
-**Open animation:**
-1. User clicks a habit card in the list
-2. The card **morphs** into the modal - it grows/moves from card position to modal position
-3. During the morph, the **title text floats** independently - it travels from where it was in the card to where it will be in the modal header (this is the "hero" effect)
-4. The morph completes, then modal content fades/staggers in
+### Desired Behavior (correct)
+The title **floats** during the animation:
+- Open: Title lifts off the card and glides to the modal header, maintaining roughly the same visual size throughout, transitioning smoothly to the final size
+- Close: Title lifts off the modal header and glides back to the card position
 
-**Close animation:**
-1. User clicks close button
-2. Content **staggers out** (reverse of stagger in)
-3. Title **floats** from modal header back toward card position
-4. Container **morphs/shrinks** from modal to card
-5. Card settles in list exactly where it was
-6. Single smooth sequence - no jump, no double bounce
+**Key difference:**
+- Scaling = element grows/shrinks in place (zoom)
+- Floating = element travels through space while morphing size naturally
 
-### Known Issues
-- ~~**Title not floating**~~ ✅ FIXED - open animation looks great
-- **Double bounce** - on close, modal shrinks, then element jumps and animates again ← FOCUS ON THIS
+Think of it like a playing card being tossed from one hand to another - it doesn't shrink then grow, it moves through space.
 
 ---
 
@@ -45,82 +41,87 @@ Fix the FLIP animation in HabitItem.tsx to achieve a card-to-modal morph effect.
 
 ### 1. Capture Current State
 
-First, see what's actually happening with the close animation:
-
 ```bash
 # Ensure dev server is running on port 5174
+node scripts/capture-animation-unified.js flip-modal --animations=open
 node scripts/capture-animation-unified.js flip-modal --animations=close
 ```
 
-### 2. Analyze the Filmstrip
+### 2. Analyze the Filmstrips
 
-Read `.playwright-mcp/filmstrip-flip-modal-close.png`
+Read the images in `.playwright-mcp/`:
+- `filmstrip-flip-modal-open.png`
+- `filmstrip-flip-modal-close.png`
 
-**Be specific about what you observe:**
-- What frame does the close animation start?
-- Does the modal shrink smoothly toward the card position?
-- Is there a **jump** where the element suddenly appears at a different position?
-- Is there a **second animation** after the initial shrink?
-- At what frame does the problem occur?
+**Look specifically at the title:**
+- Does the title text appear to travel/move through space?
+- Or does it appear to scale/zoom (grow or shrink)?
+- At what frames does the title transition occur?
+- Is the title readable throughout, or does it get tiny/distorted?
 
 ### 3. Diagnose the Problem
 
-Based on what you see, form a hypothesis about the double bounce:
-- Is the modal being unmounted before the animation completes?
-- Is FLIP capturing the wrong position (fixed modal vs relative card)?
-- Is there a CSS transition conflicting with GSAP?
-- Is the card appearing at its natural list position before FLIP can animate it?
+The title is likely being animated with scale transforms rather than position + size morphing.
 
-**Consult the expert:** Run `/gsap-animation-expert` to get FLIP plugin patterns. Look for:
-- `Flip.from()` vs `Flip.to()` for close animations
-- `onComplete` callbacks for cleanup/unmount timing
-- How to handle fixed-position modal → relative-position card transitions
+**Consult the expert:** Run `/gsap-animation-expert` to understand:
+- How FLIP calculates position vs scale differences
+- How `data-flip-id` matching handles different-sized elements
+- Whether `absolute: true` affects the morph behavior
+- How to animate position independently from scale
+
+Possible causes:
+- Title is inside a scaled container (inherits parent scale)
+- FLIP is calculating scale delta instead of position delta
+- Title animation is using `scale` instead of `x/y` + font-size
 
 ### 4. Implement a Fix
 
-Make changes to `HabitItem.tsx` (and CSS if needed) based on your diagnosis.
+Focus on making the title **move through space** rather than scale. Consider:
+- Animating title position (x, y) separately from container
+- Using actual position values rather than scale transforms
+- Ensuring title maintains readable size throughout transition
+- Matching start/end positions precisely for smooth handoff
 
 ### 5. Verify
 
-Run tests and capture the close animation again:
-
 ```bash
 npm test -w @habit-tracker/frontend -- --run
+node scripts/capture-animation-unified.js flip-modal --animations=open
 node scripts/capture-animation-unified.js flip-modal --animations=close
 ```
 
-Analyze the new filmstrip. Did your fix work? Be honest. Look for:
-- Single smooth motion from modal to card
-- No jump or position reset mid-animation
-- No second animation after the first completes
+**Check the filmstrips critically:**
+- Can you read the title text in every frame during the morph?
+- Does the title appear to travel horizontally/vertically?
+- Is it clearly moving position, not just scaling?
 
 ### 6. Document and Exit
 
 Update `.claude/plans/flip-animation-iteration.md`:
 
 ```markdown
-## Iteration N (YYYY-MM-DD HH:MM)
+## Iteration N (YYYY-MM-DD HH:MM) - Title Float Polish
 
-### Observed
-[What you saw in the filmstrips before your fix]
+### Observed (Before)
+[Describe the title behavior in filmstrip - scaling? floating? at which frames?]
 
 ### Diagnosis
-[Your hypothesis about the cause]
+[What's causing the scale effect instead of float?]
 
 ### Changes Made
-[What you changed and why]
+[What you changed to make it float instead of scale]
 
 ### Result
-[What the filmstrips show after your fix - be specific]
+[What the filmstrips show after - is it floating now?]
 
 ### Status
 [FIXED / PARTIAL / NOT FIXED]
 
 ### Next Steps (if not fixed)
-[What to try next iteration]
+[What to try next]
 ```
 
-Commit your progress:
+Commit:
 ```bash
 git add -A
 git commit -m "feat(animation): iteration N - [brief description]"
@@ -130,7 +131,7 @@ git commit -m "feat(animation): iteration N - [brief description]"
 
 ## Exit Conditions
 
-**If close animation is fixed:**
+**If title properly floats (not scales):**
 Add to iteration log: `<promise>ANIMATION_COMPLETE</promise>`
 
 **If stuck after 3+ attempts:**
@@ -138,19 +139,23 @@ Add to iteration log: `<stuck>NEEDS_HUMAN_REVIEW</stuck>`
 Include: what you tried, what you observed, specific questions
 
 **Otherwise:**
-Exit cleanly. Your documented findings will help the next iteration.
+Exit cleanly. Document findings for next iteration.
 
 ---
 
 ## Success Criteria
 
-### ~~Title Floating~~ ✅ DONE
+### Title Float Effect
+- [ ] Title text readable throughout the morph (not tiny/distorted)
+- [ ] Title visibly moves through space (position change, not just scale)
+- [ ] Title travels from card position to modal header (open)
+- [ ] Title travels from modal header to card position (close)
+- [ ] Smooth transition - no sudden jumps or size pops
 
-### Close Animation (focus here)
-- Smooth shrink from modal to card position
-- Single continuous motion - no jump mid-animation
-- No element appearing off-screen then animating back
-- Card settles exactly where it was in the list
+### What to Avoid
+- [ ] Title should NOT shrink to tiny size then grow
+- [ ] Title should NOT appear to zoom in/out
+- [ ] Title should NOT be unreadable at any point during morph
 
 ---
 
@@ -158,7 +163,7 @@ Exit cleanly. Your documented findings will help the next iteration.
 
 | File | Purpose |
 |------|---------|
-| `packages/frontend/src/components/HabitItem.tsx` | Component to fix |
-| `packages/frontend/src/App.css` | Modal styles |
+| `packages/frontend/src/components/HabitItem.tsx` | Component with title animation |
+| `packages/frontend/src/App.css` | Styles that might affect title |
 | `.claude/plans/flip-animation-iteration.md` | Iteration log |
 | `.claude/skills/gsap-animation-expert/SKILL.md` | FLIP reference |
