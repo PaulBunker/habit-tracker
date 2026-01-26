@@ -1,13 +1,15 @@
 /**
  * Unified habit item component that handles both card and modal views.
  *
- * Currently renders with instant transitions (no animations).
- * GSAP animations will be added in a future PR.
+ * Uses GSAP Flip plugin for smooth card-to-modal morphing animations.
  *
  * @packageDocumentation
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import gsap from 'gsap';
+import { Flip } from 'gsap/dist/Flip';
+import { useGSAP } from '@gsap/react';
 import type { Habit, HabitLog } from '@habit-tracker/shared';
 import { getTimezoneOffset } from '@habit-tracker/shared';
 import { habitsApi } from '../api/client';
@@ -49,6 +51,17 @@ export function HabitItem({
   onUpdate,
   onSave,
 }: HabitItemProps): JSX.Element {
+  // Animation refs
+  const cardRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLElement>(null);
+  const flipStateRef = useRef<Flip.FlipState | null>(null);
+  const titleRectRef = useRef<DOMRect | null>(null);  // Store card title's absolute position
+  const isAnimatingRef = useRef(false);
+
+  // Get contextSafe for event handlers
+  const { contextSafe } = useGSAP();
+
   // Form state (only used when expanded)
   const [name, setName] = useState(habit.name);
   const [description, setDescription] = useState(habit.description || '');
@@ -87,6 +100,89 @@ export function HabitItem({
     setIsAllDays(!habit.activeDays || habit.activeDays.length === 0);
     setError('');
   }, [habit]);
+
+  // Handle FLIP animation for OPENING only (closing is handled in handleModalClose)
+  useLayoutEffect(() => {
+    // Only handle opening animations
+    if (!isExpanded || !flipStateRef.current || isAnimatingRef.current) return;
+
+    const state = flipStateRef.current;
+    const titleRect = titleRectRef.current;
+    flipStateRef.current = null;
+    titleRectRef.current = null;
+    isAnimatingRef.current = true;
+
+    const modal = modalRef.current;
+    if (!modal) {
+      isAnimatingRef.current = false;
+      return;
+    }
+
+    // Hide modal content initially
+    const content = modal.querySelectorAll('.view-buttons, .settings-form, .settings-actions');
+    gsap.set(content, { opacity: 0, y: 10 });
+
+    // Get the modal title element
+    const titleEl = modal.querySelector('[data-flip-id^="title-"]') as HTMLElement;
+
+    // Animate title INDEPENDENTLY from container using captured absolute position
+    if (titleEl && titleRect) {
+      const modalTitleRect = titleEl.getBoundingClientRect();
+
+      // Calculate the offset from card title position to modal title position
+      const deltaX = titleRect.left - modalTitleRect.left;
+      const deltaY = titleRect.top - modalTitleRect.top;
+      const scaleX = titleRect.width / modalTitleRect.width;
+      const scaleY = titleRect.height / modalTitleRect.height;
+
+      console.log('[FLIP Title] Opening');
+      console.log('[FLIP Title] Card rect:', { left: titleRect.left, top: titleRect.top, width: titleRect.width, height: titleRect.height });
+      console.log('[FLIP Title] Modal rect:', { left: modalTitleRect.left, top: modalTitleRect.top, width: modalTitleRect.width, height: modalTitleRect.height });
+      console.log('[FLIP Title] Delta:', { deltaX, deltaY, scaleX, scaleY });
+
+      // Animate title from card position to modal position
+      gsap.fromTo(
+        titleEl,
+        {
+          x: deltaX,
+          y: deltaY,
+          scaleX: scaleX,
+          scaleY: scaleY,
+          transformOrigin: 'top left',
+        },
+        {
+          x: 0,
+          y: 0,
+          scaleX: 1,
+          scaleY: 1,
+          duration: 0.4,
+          ease: 'power2.out',
+        }
+      );
+    }
+
+    // Animate container with FLIP
+    Flip.from(state, {
+      duration: 0.4,
+      ease: 'power2.out',
+      absolute: true,
+      scale: true,
+      targets: modal,
+      onComplete: () => {
+        isAnimatingRef.current = false;
+        // Stagger in remaining modal content after morph completes
+        if (modalRef.current) {
+          gsap.to(modalRef.current.querySelectorAll('.view-buttons, .settings-form, .settings-actions'), {
+            opacity: 1,
+            y: 0,
+            stagger: 0.05,
+            duration: 0.2,
+            ease: 'power2.out',
+          });
+        }
+      },
+    });
+  }, [isExpanded]);
 
   // Day toggle for active days
   const toggleDay = (day: number): void => {
@@ -212,24 +308,87 @@ export function HabitItem({
     return '';
   };
 
-  const handleCardClick = (e: React.MouseEvent): void => {
+  // Capture card state and trigger expand animation
+  const handleCardClick = contextSafe((e: React.MouseEvent): void => {
     if ((e.target as HTMLElement).closest('.checklist-checkbox')) {
       return;
     }
+    if (cardRef.current && !isAnimatingRef.current) {
+      // Capture card container state for FLIP
+      flipStateRef.current = Flip.getState(cardRef.current);
+
+      // Capture title's absolute screen position for independent animation
+      const titleEl = cardRef.current.querySelector('[data-flip-id^="title-"]') as HTMLElement;
+      if (titleEl) {
+        titleRectRef.current = titleEl.getBoundingClientRect();
+      }
+    }
     onExpand();
-  };
+  });
 
   const handleCardKeyDown = (e: React.KeyboardEvent): void => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
+      if (cardRef.current && !isAnimatingRef.current) {
+        flipStateRef.current = Flip.getState(cardRef.current);
+        const titleEl = cardRef.current.querySelector('[data-flip-id^="title-"]') as HTMLElement;
+        if (titleEl) {
+          titleRectRef.current = titleEl.getBoundingClientRect();
+        }
+      }
       onExpand();
     }
   };
+
+  // Animate modal closing, then trigger collapse
+  const handleModalClose = contextSafe((): void => {
+    if (modalRef.current && !isAnimatingRef.current) {
+      isAnimatingRef.current = true;
+
+      // Animate modal shrinking/fading, then collapse
+      const tl = gsap.timeline({
+        onComplete: () => {
+          isAnimatingRef.current = false;
+          onCollapse();
+        },
+      });
+
+      // Fade out content first
+      tl.to(modalRef.current.querySelectorAll('.view-buttons, .settings-form, .settings-actions'), {
+        opacity: 0,
+        y: -10,
+        stagger: 0.02,
+        duration: 0.15,
+        ease: 'power2.in',
+      });
+
+      // Then shrink and fade the modal container
+      tl.to(modalRef.current, {
+        scale: 0.95,
+        opacity: 0,
+        duration: 0.2,
+        ease: 'power2.in',
+      }, '-=0.1');
+
+      // Also fade the backdrop
+      const backdrop = document.querySelector('.modal-overlay-backdrop');
+      if (backdrop) {
+        tl.to(backdrop, {
+          opacity: 0,
+          duration: 0.2,
+        }, '<');
+      }
+    } else {
+      onCollapse();
+    }
+  });
 
   // Render card view
   if (!isExpanded) {
     return (
       <div
+        ref={cardRef}
+        data-flip-id={`habit-${habit.id}`}
         className={`checklist-item ${getStatusClass()}`}
         onClick={handleCardClick}
         onKeyDown={handleCardKeyDown}
@@ -251,7 +410,10 @@ export function HabitItem({
         </label>
 
         <div className="checklist-content">
-          <span className={`checklist-name ${isDone ? 'done' : ''}`}>
+          <span
+            data-flip-id={`title-${habit.id}`}
+            className={`checklist-name ${isDone ? 'done' : ''}`}
+          >
             {habit.name}
           </span>
           {habit.dataTracking && habit.dataUnit && (
@@ -302,12 +464,19 @@ export function HabitItem({
       {/* Ghost placeholder - maintains list space when modal is open */}
       <div className="checklist-item checklist-item--ghost" />
 
-      {/* Modal overlay and panel */}
-      <div className="modal-overlay" onClick={onCollapse}>
-        <div className="modal settings-panel" onClick={(e) => e.stopPropagation()}>
+      {/* Backdrop - separate from modal for FLIP to work */}
+      <div className="modal-overlay-backdrop" onClick={handleModalClose} />
+
+      {/* Modal panel - positioned fixed, not inside flex container */}
+      <div
+        ref={modalRef}
+        data-flip-id={`habit-${habit.id}`}
+        className="modal settings-panel modal--flip"
+        onClick={(e) => e.stopPropagation()}
+      >
           <div className="modal-header">
-            <h2>{habit.name}</h2>
-            <button className="close-btn" onClick={onCollapse}>×</button>
+            <h2 data-flip-id={`title-${habit.id}`}>{habit.name}</h2>
+            <button className="close-btn" onClick={handleModalClose}>×</button>
           </div>
 
           <div className="view-buttons">
@@ -410,7 +579,7 @@ export function HabitItem({
               {isDeleting ? 'Deleting...' : 'Delete Habit'}
             </button>
             <div className="settings-actions-right">
-              <button className="btn btn-secondary" onClick={onCollapse}>
+              <button className="btn btn-secondary" onClick={handleModalClose}>
                 Cancel
               </button>
               <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
@@ -419,7 +588,6 @@ export function HabitItem({
             </div>
           </div>
         </div>
-      </div>
 
       {/* Calendar/Graph modals */}
       {shouldShowCalendar && (
