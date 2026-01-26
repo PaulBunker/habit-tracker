@@ -118,59 +118,68 @@ export function HabitItem({
       return;
     }
 
-    // Hide modal content initially
-    const content = modal.querySelectorAll('.view-buttons, .settings-form, .settings-actions');
+    // Hide modal content initially (row by row)
+    const content = modal.querySelectorAll('.close-btn, .view-buttons, .form-group, .settings-actions');
     gsap.set(content, { opacity: 0, y: 10 });
 
     // Get the modal title element
-    const titleEl = modal.querySelector('[data-flip-id^="title-"]') as HTMLElement;
+    const modalTitle = modal.querySelector('[data-flip-id^="title-"]') as HTMLElement;
 
-    // Animate title FLOATING independently from container scale
-    // Key insight: The title is INSIDE the scaled container, so it inherits parent scale.
-    // To prevent squashing, we temporarily make title position:fixed (outside parent flow)
-    // and animate it independently, then return it to normal at the end.
-    if (titleEl && titleRect) {
-      const modalTitleRect = titleEl.getBoundingClientRect();
+    // CLONE-BASED HERO ANIMATION
+    // Instead of extracting the modal title (which breaks header layout and causes X button jump),
+    // we create a clone that flies from card position to modal header position.
+    // This keeps all modal elements in their natural DOM positions.
+    if (modalTitle && titleRect) {
+      console.log('[ANIM] open-before-clone');
 
-      // Store original styles to restore later
-      const originalPosition = titleEl.style.position;
-      const originalTop = titleEl.style.top;
-      const originalLeft = titleEl.style.left;
-      const originalWidth = titleEl.style.width;
-      const originalMargin = titleEl.style.margin;
-      const originalTransform = titleEl.style.transform;
+      // CRITICAL: Capture h2's ACTUAL position BEFORE hiding it
+      // This ensures the clone lands exactly where h2 will appear
+      const modalTitleRect = modalTitle.getBoundingClientRect();
 
-      // Extract title from container by making it position:fixed
-      // Start at card title's screen position
-      titleEl.style.position = 'fixed';
-      titleEl.style.top = `${titleRect.top}px`;
-      titleEl.style.left = `${titleRect.left}px`;
-      titleEl.style.width = `${titleRect.width}px`;
-      titleEl.style.margin = '0';
-      titleEl.style.transform = 'none'; // Clear any existing transforms
-      titleEl.style.zIndex = '10001'; // Above modal during animation
+      // Hide modal title IMMEDIATELY (before FLIP animation starts)
+      // Use visibility:hidden instead of opacity:0 to completely hide it
+      modalTitle.style.visibility = 'hidden';
 
-      console.log('[FLIP Title] Opening - EXTRACTED mode (position:fixed)');
-      console.log('[FLIP Title] Card rect:', { left: titleRect.left, top: titleRect.top, width: titleRect.width, height: titleRect.height });
-      console.log('[FLIP Title] Modal rect:', { left: modalTitleRect.left, top: modalTitleRect.top, width: modalTitleRect.width, height: modalTitleRect.height });
+      // Create a clone for the flying animation - do this synchronously
+      // Get computed styles from the modal title to match exactly
+      const modalTitleStyles = window.getComputedStyle(modalTitle);
+      const clone = document.createElement('span');
+      clone.textContent = modalTitle.textContent;
+      clone.style.cssText = `
+        position: fixed;
+        top: ${titleRect.top}px;
+        left: ${titleRect.left}px;
+        margin: 0;
+        padding: 0;
+        font-size: ${modalTitleStyles.fontSize};
+        font-weight: ${modalTitleStyles.fontWeight};
+        color: ${modalTitleStyles.color};
+        line-height: ${modalTitleStyles.lineHeight};
+        z-index: 10001;
+        pointer-events: none;
+        white-space: nowrap;
+      `;
+      document.body.appendChild(clone);
+      console.log('[ANIM] open-clone-created');
 
-      // Animate title from card position to modal header position
-      gsap.to(titleEl, {
-        top: modalTitleRect.top,
-        left: modalTitleRect.left,
-        width: modalTitleRect.width,
-        opacity: 1,
+      // Use the h2's ACTUAL position as destination (not calculated offsets)
+      // This ensures pixel-perfect handoff when clone is removed and h2 revealed
+      const destTop = modalTitleRect.top;
+      const destLeft = modalTitleRect.left;
+
+      // Animate clone from card position to modal header position
+      // Keep font-size constant to avoid any visual distortion during animation
+      gsap.to(clone, {
+        top: destTop,
+        left: destLeft,
         duration: 0.4,
         ease: 'power2.out',
         onComplete: () => {
-          // Return title to normal document flow
-          titleEl.style.position = originalPosition;
-          titleEl.style.top = originalTop;
-          titleEl.style.left = originalLeft;
-          titleEl.style.width = originalWidth;
-          titleEl.style.margin = originalMargin;
-          titleEl.style.transform = originalTransform;
-          titleEl.style.zIndex = '';
+          // Remove clone and reveal the real modal title
+          console.log('[ANIM] open-clone-removing');
+          clone.remove();
+          modalTitle.style.visibility = 'visible';
+          console.log('[ANIM] open-h2-visible');
         },
       });
     }
@@ -184,13 +193,13 @@ export function HabitItem({
       targets: modal,
       onComplete: () => {
         isAnimatingRef.current = false;
-        // Stagger in remaining modal content after morph completes
+        // Stagger in remaining modal content after morph completes (including close button)
         if (modalRef.current) {
-          gsap.to(modalRef.current.querySelectorAll('.view-buttons, .settings-form, .settings-actions'), {
+          gsap.to(modalRef.current.querySelectorAll('.close-btn, .view-buttons, .form-group, .settings-actions'), {
             opacity: 1,
             y: 0,
-            stagger: 0.05,
-            duration: 0.2,
+            stagger: 0.03,
+            duration: 0.15,
             ease: 'power2.out',
           });
         }
@@ -392,12 +401,12 @@ export function HabitItem({
         },
       });
 
-      // Fade out content first (stagger from end)
-      tl.to(modal.querySelectorAll('.view-buttons, .settings-form, .settings-actions'), {
+      // Fade out content first (stagger from end, row by row)
+      tl.to(modal.querySelectorAll('.close-btn, .view-buttons, .form-group, .settings-actions'), {
         opacity: 0,
         y: -10,
         stagger: { each: 0.02, from: 'end' },
-        duration: 0.12,
+        duration: 0.1,
         ease: 'power2.in',
       });
 
@@ -410,45 +419,49 @@ export function HabitItem({
         }, '-=0.05');
       }
 
-      // Animate title FLOATING from modal header to card position
-      // Extract title from container to prevent scale distortion
+      // CLONE-BASED HERO ANIMATION for close
+      // Create a clone that flies from modal header to card position
+      // This keeps modal layout stable (X button doesn't jump)
       if (modalTitle) {
+        console.log('[ANIM] close-before-clone');
         const modalTitleRect = modalTitle.getBoundingClientRect();
 
-        // Store original styles
-        const originalPosition = modalTitle.style.position;
-        const originalTop = modalTitle.style.top;
-        const originalLeft = modalTitle.style.left;
-        const originalWidth = modalTitle.style.width;
-        const originalMargin = modalTitle.style.margin;
-        const originalTransform = modalTitle.style.transform;
+        // Create a clone for the flying animation
+        // Get computed styles from the modal title to match exactly
+        const modalTitleStyles = window.getComputedStyle(modalTitle);
+        const clone = document.createElement('span');
+        clone.textContent = modalTitle.textContent;
+        clone.style.cssText = `
+          position: fixed;
+          top: ${modalTitleRect.top}px;
+          left: ${modalTitleRect.left}px;
+          margin: 0;
+          padding: 0;
+          font-size: ${modalTitleStyles.fontSize};
+          font-weight: ${modalTitleStyles.fontWeight};
+          color: ${modalTitleStyles.color};
+          z-index: 10001;
+          pointer-events: none;
+          white-space: nowrap;
+        `;
+        document.body.appendChild(clone);
+        console.log('[ANIM] close-clone-created');
 
-        // Extract title by making it position:fixed at current screen position
-        modalTitle.style.position = 'fixed';
-        modalTitle.style.top = `${modalTitleRect.top}px`;
-        modalTitle.style.left = `${modalTitleRect.left}px`;
-        modalTitle.style.width = `${modalTitleRect.width}px`;
-        modalTitle.style.margin = '0';
-        modalTitle.style.transform = 'none';
-        modalTitle.style.zIndex = '10001';
+        // Hide modal title during clone's flight
+        modalTitle.style.opacity = '0';
 
-        // Animate to card title position
-        tl.to(modalTitle, {
+        // Animate clone from modal header to card title position
+        tl.to(clone, {
           top: cardTitleTop,
           left: cardTitleLeft,
-          width: ghostRect.width - 96, // Approximate card title width (minus checkbox + padding)
-          opacity: 0,
+          fontSize: '16px',
+          fontWeight: '500',
+          opacity: 0, // Fade out as it lands
           duration: 0.35,
           ease: 'power2.inOut',
           onComplete: () => {
-            // Restore styles (though modal will be destroyed anyway)
-            modalTitle.style.position = originalPosition;
-            modalTitle.style.top = originalTop;
-            modalTitle.style.left = originalLeft;
-            modalTitle.style.width = originalWidth;
-            modalTitle.style.margin = originalMargin;
-            modalTitle.style.transform = originalTransform;
-            modalTitle.style.zIndex = '';
+            console.log('[ANIM] close-clone-removed');
+            clone.remove();
           },
         }, '<');
       }

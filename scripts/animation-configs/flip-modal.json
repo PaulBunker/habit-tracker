@@ -5,9 +5,9 @@
   "postNavWait": 500,
   "viewport": { "width": 800, "height": 600 },
   "filmstrip": {
-    "scale": 0.35,
-    "cols": 8,
-    "labelHeight": 18
+    "scale": 0.5,
+    "cols": 5,
+    "labelHeight": 16
   },
   "animations": {
     "open": {
@@ -15,6 +15,12 @@
       "trigger": { "click": ".checklist-item" },
       "duration": 800,
       "frames": 16
+    },
+    "open-end": {
+      "setup": [{ "waitFor": ".checklist-item" }, { "click": ".checklist-item" }, { "wait": 300 }],
+      "trigger": { "wait": 1 },
+      "duration": 250,
+      "frames": 10
     },
     "close": {
       "setup": [
@@ -25,6 +31,32 @@
       "trigger": { "click": ".close-btn" },
       "duration": 800,
       "frames": 16
+    },
+    "close-start": {
+      "setup": [
+        { "waitFor": ".checklist-item" },
+        { "click": ".checklist-item" },
+        { "wait": 600 }
+      ],
+      "trigger": { "click": ".close-btn" },
+      "duration": 200,
+      "frames": 10
+    },
+    "close-instant": {
+      "setup": [
+        { "waitFor": ".checklist-item" },
+        { "click": ".checklist-item" },
+        { "wait": 600 }
+      ],
+      "trigger": { "click": ".close-btn" },
+      "duration": 50,
+      "frames": 10
+    },
+    "open-handoff": {
+      "setup": [{ "waitFor": ".checklist-item" }, { "click": ".checklist-item" }, { "wait": 380 }],
+      "trigger": { "wait": 1 },
+      "duration": 60,
+      "frames": 12
     }
   }
 }

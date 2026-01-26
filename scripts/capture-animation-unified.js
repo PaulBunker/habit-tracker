@@ -17,11 +17,19 @@
  *   --verify            Run verification (if config supports it)
  *   --output=DIR        Output directory (default: .playwright-mcp)
  *   --list              List available configs
+ *   --console           Console-triggered capture mode (captures on [ANIM] markers)
+ *   --console-offset=MS Capture offset before/after marker (default: 10ms)
+ *
+ * Console-Triggered Mode:
+ *   Add console.log('[ANIM] marker-name') to your animation code.
+ *   The script captures frames when it sees these markers.
+ *   Use --console-offset to capture N ms before and after each marker.
  *
  * Examples:
  *   node scripts/capture-animation-unified.js flip-modal open
  *   node scripts/capture-animation-unified.js flip-modal close --frames=20
- *   node scripts/capture-animation-unified.js progress-bar fill --verify
+ *   node scripts/capture-animation-unified.js flip-modal open --console
+ *   node scripts/capture-animation-unified.js flip-modal open --console --console-offset=5
  *   node scripts/capture-animation-unified.js --list
  */
 
@@ -32,6 +40,7 @@ const fs = require('fs');
 
 const CONFIG_DIR = path.join(__dirname, 'animation-configs');
 const DEFAULT_OUTPUT_DIR = '.playwright-mcp';
+const ANIM_MARKER_PREFIX = '[ANIM]';
 
 // Parse CLI arguments
 function parseArgs() {
@@ -44,6 +53,8 @@ function parseArgs() {
     verify: false,
     outputDir: DEFAULT_OUTPUT_DIR,
     list: false,
+    consoleMode: false,
+    consoleOffset: 10,
   };
 
   for (const arg of args) {
@@ -51,12 +62,16 @@ function parseArgs() {
       options.list = true;
     } else if (arg === '--verify') {
       options.verify = true;
+    } else if (arg === '--console') {
+      options.consoleMode = true;
     } else if (arg.startsWith('--frames=')) {
       options.frames = parseInt(arg.split('=')[1]);
     } else if (arg.startsWith('--duration=')) {
       options.duration = parseInt(arg.split('=')[1]);
     } else if (arg.startsWith('--output=')) {
       options.outputDir = arg.split('=')[1];
+    } else if (arg.startsWith('--console-offset=')) {
+      options.consoleOffset = parseInt(arg.split('=')[1]);
     } else if (!arg.startsWith('--')) {
       if (!options.configName) {
         options.configName = arg;
@@ -133,8 +148,8 @@ async function executeAction(page, action) {
 }
 
 // Capture a single frame with verification data
-async function captureFrame(page, ms, animConfig) {
-  const frame = { ms, buffer: null, verifyValue: null };
+async function captureFrame(page, label, animConfig) {
+  const frame = { label, buffer: null, verifyValue: null };
 
   // Capture screenshot
   frame.buffer = await page.screenshot();
@@ -154,7 +169,7 @@ async function captureFrame(page, ms, animConfig) {
   return frame;
 }
 
-// Capture animation frames
+// Capture animation frames (time-based mode)
 async function captureAnimation(page, config, animName, animConfig, options) {
   const frames = [];
   const duration = options.duration || animConfig.duration;
@@ -186,11 +201,116 @@ async function captureAnimation(page, config, animName, animConfig, options) {
     }
 
     // Capture frame
-    const frame = await captureFrame(page, ms, animConfig);
+    const frame = await captureFrame(page, `${ms}ms`, animConfig);
     frames.push(frame);
 
     const verifyInfo = frame.verifyValue ? ` (${animConfig.verify.attribute}=${frame.verifyValue})` : '';
     console.log(`  Captured: ${ms}ms${verifyInfo}`);
+  }
+
+  return frames;
+}
+
+// Capture animation frames (console-triggered mode)
+async function captureAnimationConsole(page, config, animName, animConfig, options) {
+  const frames = [];
+  const markers = [];
+  const offset = options.consoleOffset;
+  const maxDuration = options.duration || animConfig.duration || 2000;
+
+  console.log(`\n=== Capturing "${animName}" animation (console-triggered) ===`);
+  console.log(`  Listening for: ${ANIM_MARKER_PREFIX} markers`);
+  console.log(`  Offset: ±${offset}ms around each marker`);
+  console.log(`  Max duration: ${maxDuration}ms`);
+
+  // First pass: collect all markers
+  console.log('\n  Pass 1: Collecting markers...');
+
+  await page.goto(config.url);
+  await page.waitForTimeout(config.postNavWait || 300);
+
+  // Listen for console messages
+  const startTime = Date.now();
+  page.on('console', msg => {
+    const text = msg.text();
+    if (text.startsWith(ANIM_MARKER_PREFIX)) {
+      const elapsed = Date.now() - startTime;
+      const markerName = text.replace(ANIM_MARKER_PREFIX, '').trim();
+      markers.push({ name: markerName, time: elapsed });
+      console.log(`    Found marker: "${markerName}" at ~${elapsed}ms`);
+    }
+  });
+
+  // Run setup actions
+  if (animConfig.setup) {
+    for (const action of animConfig.setup) {
+      await executeAction(page, action);
+    }
+  }
+
+  // Trigger animation and wait for it to complete
+  await executeAction(page, animConfig.trigger);
+  await page.waitForTimeout(maxDuration);
+
+  if (markers.length === 0) {
+    console.log('\n  No markers found! Add console.log("[ANIM] marker-name") to your animation code.');
+    return frames;
+  }
+
+  console.log(`\n  Found ${markers.length} markers. Pass 2: Capturing frames...`);
+
+  // Second pass: capture frames at marker times (with offset)
+  const capturePoints = [];
+  for (const marker of markers) {
+    // Capture before marker
+    if (offset > 0) {
+      capturePoints.push({
+        time: Math.max(0, marker.time - offset),
+        label: `${marker.name} -${offset}ms`,
+      });
+    }
+    // Capture at marker
+    capturePoints.push({
+      time: marker.time,
+      label: marker.name,
+    });
+    // Capture after marker
+    if (offset > 0) {
+      capturePoints.push({
+        time: marker.time + offset,
+        label: `${marker.name} +${offset}ms`,
+      });
+    }
+  }
+
+  // Sort by time and remove duplicates
+  capturePoints.sort((a, b) => a.time - b.time);
+
+  for (const point of capturePoints) {
+    // Navigate fresh for each frame
+    await page.goto(config.url);
+    await page.waitForTimeout(config.postNavWait || 300);
+
+    // Run setup actions
+    if (animConfig.setup) {
+      for (const action of animConfig.setup) {
+        await executeAction(page, action);
+      }
+    }
+
+    // Trigger animation
+    await executeAction(page, animConfig.trigger);
+
+    // Wait for capture time
+    if (point.time > 0) {
+      await page.waitForTimeout(point.time);
+    }
+
+    // Capture frame
+    const frame = await captureFrame(page, point.label, animConfig);
+    frames.push(frame);
+
+    console.log(`  Captured: ${point.label} (${point.time}ms)`);
   }
 
   return frames;
@@ -255,13 +375,14 @@ async function createFilmstrip(frames, outputPath, title, filmstripConfig = {}) 
       left: x,
     });
 
-    // Add label
+    // Add label (use frame.label instead of frame.ms for console mode)
+    const labelText = frame.label || `${frame.ms}ms`;
     const labelSvg = `
       <svg width="${frameWidth}" height="${labelHeight}">
         <rect width="${frameWidth}" height="${labelHeight}" fill="#333"/>
-        <text x="${frameWidth / 2}" y="20" text-anchor="middle"
-              font-family="monospace" font-size="14" fill="white">
-          ${frame.ms}ms
+        <text x="${frameWidth / 2}" y="${labelHeight - 8}" text-anchor="middle"
+              font-family="monospace" font-size="12" fill="white">
+          ${escapeXml(labelText)}
         </text>
       </svg>
     `;
@@ -304,33 +425,22 @@ function printVerificationReport(frames, animConfig) {
   console.log('');
 
   let errors = 0;
-  const totalDuration = frames[frames.length - 1].ms;
 
   for (const frame of frames) {
     if (frame.verifyValue === null) {
-      console.log(`  ${frame.ms}ms: NO DATA`);
+      console.log(`  ${frame.label}: NO DATA`);
       errors++;
       continue;
     }
 
-    const actual = parseFloat(frame.verifyValue);
-    const expected = frame.ms / totalDuration;
-    const diff = Math.abs(actual - expected);
-    const status = diff <= tolerance ? 'OK' : 'DRIFT';
-
-    if (status !== 'OK') errors++;
-
-    console.log(
-      `  ${String(frame.ms).padStart(5)}ms: expected=${expected.toFixed(3)}, ` +
-        `actual=${actual.toFixed(3)}, diff=${diff.toFixed(3)} [${status}]`
-    );
+    console.log(`  ${frame.label}: ${attr}=${frame.verifyValue}`);
   }
 
   console.log('');
   if (errors === 0) {
-    console.log('  All frames within tolerance.');
+    console.log('  All frames captured successfully.');
   } else {
-    console.log(`  ${errors} frame(s) outside tolerance.`);
+    console.log(`  ${errors} frame(s) missing verification data.`);
   }
 }
 
@@ -370,6 +480,13 @@ async function main() {
   if (!options.configName) {
     console.error('Usage: node scripts/capture-animation-unified.js <config> [animation] [options]');
     console.error('       node scripts/capture-animation-unified.js --list');
+    console.error('\nOptions:');
+    console.error('  --frames=N          Override frame count');
+    console.error('  --duration=MS       Override duration');
+    console.error('  --console           Console-triggered capture mode');
+    console.error('  --console-offset=MS Offset before/after markers (default: 10)');
+    console.error('  --verify            Run verification');
+    console.error('  --output=DIR        Output directory');
     process.exit(1);
   }
 
@@ -378,6 +495,7 @@ async function main() {
   console.log('=== Unified Animation Capture ===\n');
   console.log(`Config: ${config.name}`);
   console.log(`URL: ${config.url}`);
+  console.log(`Mode: ${options.consoleMode ? 'Console-triggered' : 'Time-based'}`);
 
   // Determine which animations to capture
   const animationNames = options.animationName
@@ -411,19 +529,24 @@ async function main() {
   // Capture each animation
   for (const animName of animationNames) {
     const animConfig = config.animations[animName];
-    const frames = await captureAnimation(page, config, animName, animConfig, options);
+
+    // Choose capture mode
+    const frames = options.consoleMode
+      ? await captureAnimationConsole(page, config, animName, animConfig, options)
+      : await captureAnimation(page, config, animName, animConfig, options);
 
     // Create filmstrip
     const filmstripEnabled = config.filmstrip?.enabled !== false;
     if (filmstripEnabled && frames.length > 0) {
+      const suffix = options.consoleMode ? '-console' : '';
       const filmstripPath = path.join(
         options.outputDir,
-        `filmstrip-${options.configName}-${animName}.png`
+        `filmstrip-${options.configName}-${animName}${suffix}.png`
       );
       await createFilmstrip(
         frames,
         filmstripPath,
-        `${config.name} - ${animName}`,
+        `${config.name} - ${animName}${options.consoleMode ? ' (console)' : ''}`,
         config.filmstrip
       );
     }

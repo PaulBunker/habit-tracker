@@ -315,6 +315,97 @@ const handleMouseLeave = contextSafe(() => {
 
 ---
 
+## Clone-Based Hero Animations (FLIP Alternative)
+
+When FLIP causes layout issues (squashed elements, sibling jumps), use a **clone-based approach** instead.
+
+### Why Clone-Based?
+
+FLIP morphs elements in place, but this can cause:
+- **Nested element distortion**: Child elements inherit parent scale transforms
+- **Layout shifts**: Removing elements from DOM flow causes siblings to jump
+- **Position mismatch**: FLIP calculates positions that may not match final DOM state
+
+Clone-based animations avoid these by keeping DOM elements in their natural positions.
+
+### Core Pattern
+
+```tsx
+// 1. Capture source element's position BEFORE hiding
+const sourceRect = sourceElement.getBoundingClientRect();
+const styles = window.getComputedStyle(sourceElement);
+
+// 2. Hide source (visibility, not display, to preserve layout)
+sourceElement.style.visibility = 'hidden';
+
+// 3. Capture destination's ACTUAL position (not calculated!)
+const destRect = destElement.getBoundingClientRect();
+
+// 4. Create clone matching source styles EXACTLY
+const clone = document.createElement('span');
+clone.textContent = sourceElement.textContent;
+clone.style.cssText = `
+  position: fixed;
+  top: ${sourceRect.top}px;
+  left: ${sourceRect.left}px;
+  font-size: ${styles.fontSize};
+  font-weight: ${styles.fontWeight};
+  line-height: ${styles.lineHeight};
+  color: ${styles.color};
+  z-index: 10001;
+  pointer-events: none;
+`;
+document.body.appendChild(clone);
+
+// 5. Animate clone to destination's ACTUAL position
+gsap.to(clone, {
+  top: destRect.top,
+  left: destRect.left,
+  duration: 0.4,
+  ease: 'power2.out',
+  onComplete: () => {
+    clone.remove();
+    destElement.style.visibility = 'visible';
+  }
+});
+```
+
+### Critical Rules for Seamless Handoffs
+
+| Rule | Why |
+|------|-----|
+| **Use computed styles** | Never hardcode font-size, font-weight, etc. - get from `getComputedStyle()` |
+| **Include line-height** | Vertical alignment depends on line-height matching |
+| **Capture actual positions** | Use `getBoundingClientRect()` on the REAL element, not calculated offsets |
+| **Capture BEFORE hiding** | Get destination position before any visibility changes |
+| **Use visibility, not display** | `visibility: hidden` preserves layout; `display: none` collapses it |
+
+### Common Handoff Bugs
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Title "jumps" at handoff | Clone position doesn't match h2's actual position | Use `destElement.getBoundingClientRect()` directly |
+| Title "grows/shrinks" at handoff | Font-size mismatch between clone and real element | Use `getComputedStyle(element).fontSize` |
+| Title "shifts vertically" | Line-height mismatch | Copy `lineHeight` from computed styles |
+| Sibling elements jump | Element removed from DOM flow | Use `visibility: hidden` instead of removing from DOM |
+
+### Console Markers for Debugging
+
+Add markers at handoff points to debug with filmstrip captures:
+
+```tsx
+console.log('[ANIM] clone-created');
+// ... animation ...
+console.log('[ANIM] clone-removing');
+clone.remove();
+realElement.style.visibility = 'visible';
+console.log('[ANIM] real-element-visible');
+```
+
+Then capture with: `node scripts/capture-animation-unified.js config animation --console`
+
+---
+
 ## Recommended Easings
 
 | Easing | Use Case |

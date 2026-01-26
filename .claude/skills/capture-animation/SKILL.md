@@ -47,6 +47,50 @@ Edit `scripts/animation-configs/<config>.json`:
 }
 ```
 
+### Console-Triggered Captures (Advanced)
+
+For precise debugging of handoff moments (clone swaps, element reveals), use console-triggered captures instead of time-based captures.
+
+**How it works:**
+1. Add `[ANIM]` console markers to your code at key moments
+2. Run capture with `--console` flag
+3. Script captures frames at marker times (plus optional offset before/after)
+
+**Add markers to your animation code:**
+```javascript
+// In HabitItem.tsx (or similar)
+document.body.appendChild(clone);
+console.log('[ANIM] open-clone-created');
+
+// Later, when clone is removed:
+console.log('[ANIM] open-clone-removing');
+clone.remove();
+modalTitle.style.visibility = 'visible';
+console.log('[ANIM] open-h2-visible');
+```
+
+**Run console-triggered capture:**
+```bash
+# Capture frame at each [ANIM] marker
+node scripts/capture-animation-unified.js flip-modal open --console
+
+# Capture 50ms before and after each marker (for context)
+node scripts/capture-animation-unified.js flip-modal open --console --console-offset=50
+```
+
+**Current markers in HabitItem.tsx:**
+| Marker | Description |
+|--------|-------------|
+| `[ANIM] open-clone-created` | Clone appended to body for open animation |
+| `[ANIM] open-clone-removing` | Just before clone is removed |
+| `[ANIM] open-h2-visible` | Real h2 element visibility restored |
+| `[ANIM] close-clone-created` | Clone appended for close animation |
+| `[ANIM] close-clone-removed` | Clone removed at end of close |
+
+**When to use console-triggered vs time-based:**
+- **Time-based**: Understanding overall animation flow, checking timing
+- **Console-triggered**: Debugging specific handoff moments (clone↔real element swaps)
+
 ---
 
 ## Phase 2: Analyze Filmstrips

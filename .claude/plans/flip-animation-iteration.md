@@ -455,6 +455,134 @@ Extract the title from the container's transform hierarchy by making it `positio
 
 ---
 
+## Iteration 8 (2026-01-26) - Clone-Based Hero Animation
+
+### Frame-by-Frame Analysis (Before)
+The previous approach extracted the modal h2 title using `position: fixed`, which:
+1. Caused X button to jump (sibling layout disruption)
+2. Still showed squashed modal title in early frames (opacity:0 wasn't hiding it fast enough)
+3. Title floated in center instead of from card header to modal header
+
+### Diagnosis
+Extracting the actual modal h2 element broke the modal-header layout (flexbox).
+The element was still visible for a few frames before opacity took effect.
+
+### Changes Made
+**Rewrote the title animation to use clone-based approach:**
+
+1. **Open animation (`useLayoutEffect`):**
+   - Hide modal h2 with `visibility: hidden` immediately (before FLIP starts)
+   - Create a `<span>` clone with the title text
+   - Position clone at card title's screen position (`position: fixed`)
+   - Animate clone from card position to modal header position
+   - Remove clone and reveal modal h2 on completion
+
+2. **Close animation (`handleModalClose`):**
+   - Create clone at modal title position
+   - Hide modal h2 with `visibility: hidden`
+   - Animate clone from modal header toward card position
+   - Clone fades out as modal morphs back to card
+
+**Key insight from `/gsap-animation-expert` skill:**
+Clone-based hero animation is the safest technique because:
+- Clone is NOT a child of the scaled container (no squashing)
+- Original elements stay in place (no sibling layout disruption)
+- Clone uses exact screen coordinates (accurate positioning)
+
+### Frame-by-Frame Analysis (After)
+| Frame | Title | X Button | Notes |
+|-------|-------|----------|-------|
+| 0ms | At card position | N/A | Start state |
+| 53ms | Clone floating upward | Right side stable | No squashing |
+| 107ms | Clone mid-flight | Right side stable | Normal proportions |
+| 160ms | Clone near modal header | Right side stable | Approaching destination |
+| 213ms+ | Clone arrives, then replaced by h2 | Right side stable | Smooth transition |
+
+### Verification
+- [x] All 77 tests pass
+- [x] Title floats from card position toward modal header
+- [x] X button does NOT jump
+- [x] Modal h2 hidden with `visibility: hidden` during animation
+
+### Status
+**FIXED** - Clone-based approach resolves all three issues.
+
+---
+
+---
+
+## Iteration 9 (2026-01-26) - X Close Button Stagger Fix
+
+### Frame-by-Frame Analysis (Before)
+The X close button was visible throughout the entire animation but should stagger in/out WITH the content.
+
+**Previous behavior:**
+- Open: X button visible at all times (even during morph)
+- Close: X button visible during morph phase (should fade with content)
+
+### Diagnosis
+The content stagger selectors were missing `.close-btn`:
+
+```tsx
+// Lines 122, 198, 405 were:
+'.view-buttons, .settings-form, .settings-actions'
+// Missing: .close-btn
+```
+
+### Changes Made
+Added `.close-btn` to all three content stagger selectors in `HabitItem.tsx`:
+
+1. **Line 122** (open - initial hide):
+   ```tsx
+   const content = modal.querySelectorAll('.close-btn, .view-buttons, .settings-form, .settings-actions');
+   gsap.set(content, { opacity: 0, y: 10 });
+   ```
+
+2. **Line 198** (open - stagger in):
+   ```tsx
+   gsap.to(modalRef.current.querySelectorAll('.close-btn, .view-buttons, .settings-form, .settings-actions'), {
+     opacity: 1, y: 0, stagger: 0.05, duration: 0.2, ease: 'power2.out'
+   });
+   ```
+
+3. **Line 405** (close - stagger out):
+   ```tsx
+   tl.to(modal.querySelectorAll('.close-btn, .view-buttons, .settings-form, .settings-actions'), {
+     opacity: 0, y: -10, stagger: { each: 0.02, from: 'end' }, duration: 0.12, ease: 'power2.in'
+   });
+   ```
+
+### Frame-by-Frame Analysis (After)
+
+**Open animation:**
+| Frame | Timestamp | X Button | Modal Content | Notes |
+|-------|-----------|----------|---------------|-------|
+| 1 | 0ms | NOT visible | NOT visible | Initial card state |
+| 2-5 | 53-168ms | NOT visible | NOT visible | Card morphing to modal |
+| 6-7 | 213-267ms | Faintly visible | NOT visible | X starts appearing |
+| 8+ | 320ms+ | Visible | Visible | Content staggers in together |
+
+**Close animation:**
+| Frame | Timestamp | X Button | Modal Content | Notes |
+|-------|-----------|----------|---------------|-------|
+| 1 | 0ms | Visible | Visible | Initial modal state |
+| 2-3 | 42-84ms | Fading | Fading | Content staggers out together |
+| 4+ | 126ms+ | NOT visible | NOT visible | Morph phase begins, X gone |
+
+### Verification Checklist
+- [x] Open: X button NOT visible during morph (frames 0-213ms)
+- [x] Open: X button staggers in WITH content (after ~267ms)
+- [x] Close: X button staggers out WITH content at start (0-84ms)
+- [x] Close: X button NOT visible during morph phase (126ms+)
+- [x] Title animation still works correctly (no regressions)
+
+### Status
+**FIXED** - X button now properly staggers in/out with the modal content.
+
+<promise>ANIMATION_COMPLETE</promise>
+
+---
+
 ## Context Recovery Instructions
 
 If starting fresh:
@@ -462,3 +590,47 @@ If starting fresh:
 2. Check the Iteration Log for last attempt
 3. Read `HabitItem.tsx` to understand current implementation
 4. Continue from where the log left off
+
+---
+
+## Iteration 9-10 (2026-01-26) - Final Fixes
+
+### Issues Fixed
+
+1. **Font-size mismatch** (clone 24px vs h2 20px)
+   - Changed clone to use `getComputedStyle()` for fontSize, fontWeight, lineHeight, color
+   
+2. **Position mismatch** (calculated offsets vs actual position)
+   - Now capture h2's actual `getBoundingClientRect()` BEFORE hiding
+   - Use that position directly as clone destination
+
+3. **X button visible during morph**
+   - Added `.close-btn` to stagger selectors
+   - X button now hidden during morph, staggers with content
+
+4. **Stagger granularity**
+   - Changed from 4 container groups to row-by-row (8 elements)
+   - Targets: `.close-btn, .view-buttons, .form-group, .settings-actions`
+
+### Final Animation Timing
+
+**Open:**
+- Morph: 0.4s
+- Title float: 0.4s (parallel with morph)
+- Content stagger: 0.03s between rows, 0.15s duration each
+
+**Close:**
+- Content stagger: 0.02s between rows (bottom→top), 0.1s duration
+- Title float + morph: 0.35s
+
+### Status: COMPLETE
+
+All animation criteria met:
+- [x] Title floats smoothly from card to modal header
+- [x] No size jump at handoff (computed styles match)
+- [x] No position jump at handoff (actual rect used)
+- [x] X button staggers with content
+- [x] Row-by-row stagger effect
+- [x] Close animation mirrors open (reverse stagger)
+
+<promise>ANIMATION_COMPLETE</promise>
