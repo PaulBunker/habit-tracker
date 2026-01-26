@@ -125,36 +125,32 @@ export function HabitItem({
     // Get the modal title element
     const titleEl = modal.querySelector('[data-flip-id^="title-"]') as HTMLElement;
 
-    // Animate title INDEPENDENTLY from container using captured absolute position
+    // Animate title FLOATING (position only, no scale) for smooth glide effect
     if (titleEl && titleRect) {
       const modalTitleRect = titleEl.getBoundingClientRect();
 
-      // Calculate the offset from card title position to modal title position
+      // Calculate the position offset from card title to modal title
       const deltaX = titleRect.left - modalTitleRect.left;
       const deltaY = titleRect.top - modalTitleRect.top;
-      const scaleX = titleRect.width / modalTitleRect.width;
-      const scaleY = titleRect.height / modalTitleRect.height;
 
-      console.log('[FLIP Title] Opening');
+      console.log('[FLIP Title] Opening - FLOAT mode (no scale)');
       console.log('[FLIP Title] Card rect:', { left: titleRect.left, top: titleRect.top, width: titleRect.width, height: titleRect.height });
       console.log('[FLIP Title] Modal rect:', { left: modalTitleRect.left, top: modalTitleRect.top, width: modalTitleRect.width, height: modalTitleRect.height });
-      console.log('[FLIP Title] Delta:', { deltaX, deltaY, scaleX, scaleY });
+      console.log('[FLIP Title] Delta:', { deltaX, deltaY });
 
-      // Animate title from card position to modal position
+      // Float title from card position to modal position
+      // NO SCALE - only position changes, so title travels through space
       gsap.fromTo(
         titleEl,
         {
           x: deltaX,
           y: deltaY,
-          scaleX: scaleX,
-          scaleY: scaleY,
-          transformOrigin: 'top left',
+          opacity: 0.8, // Subtle fade helps with the "lifting off" effect
         },
         {
           x: 0,
           y: 0,
-          scaleX: 1,
-          scaleY: 1,
+          opacity: 1,
           duration: 0.4,
           ease: 'power2.out',
         }
@@ -396,20 +392,17 @@ export function HabitItem({
         }, '-=0.05');
       }
 
-      // Animate title floating from modal header to card position
+      // Animate title FLOATING from modal header to card position
+      // NO SCALE - only position changes, so title travels through space
       if (modalTitle) {
         const modalTitleRect = modalTitle.getBoundingClientRect();
         const deltaX = cardTitleLeft - modalTitleRect.left;
         const deltaY = cardTitleTop - modalTitleRect.top;
-        // Card title is smaller, estimate scale
-        const scaleRatio = 0.75;
 
         tl.to(modalTitle, {
           x: deltaX,
           y: deltaY,
-          scaleX: scaleRatio,
-          scaleY: scaleRatio,
-          transformOrigin: 'top left',
+          opacity: 0.8, // Subtle fade helps with the "landing" effect
           duration: 0.35,
           ease: 'power2.inOut',
         }, '<');

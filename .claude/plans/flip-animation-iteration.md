@@ -283,9 +283,79 @@ Filmstrip shows proper morph:
 - Frame 361ms+: List view with card in place
 
 ### Status
-**FIXED** - Both open and close animations now work as intended:
-- Open: Card morphs to modal, title floats independently
-- Close: Modal morphs back to card position, title floats back
+**PARTIAL** - Container morph works, but title animation needs polish.
+
+~~<promise>ANIMATION_COMPLETE</promise>~~ REVOKED - Title needs polish (see Phase 2 below)
+
+---
+
+## Phase 2: Title Float Polish
+
+### Problem Identified
+The title animation **scales** (zoom effect) rather than **floats** (travels through space):
+- Open: Title starts small and grows larger (wrong)
+- Close: Title shrinks from large to small (wrong)
+
+### Desired Behavior
+- Open: Title lifts off card and glides to modal header, maintaining readable size throughout
+- Close: Title lifts off modal header and glides back to card position
+
+### Success Criteria
+- [x] Title text readable throughout the morph (not tiny/distorted)
+- [x] Title visibly moves through space (position change, not just scale)
+- [x] Title travels from card position to modal header (open)
+- [x] Title travels from modal header to card position (close)
+- [x] Smooth transition - no sudden jumps or size pops
+
+---
+
+## Iteration 6 (2026-01-26 00:40) - Title Float Polish
+
+### Observed (Before)
+The title animation was using `scaleX`/`scaleY` transforms to match the size difference between card title (small) and modal title (large):
+- Open: Title started small and grew larger (zoom in effect)
+- Close: Title shrank from large to small (zoom out effect)
+
+This created a scaling/zoom effect rather than a floating/gliding effect.
+
+### Diagnosis
+In `HabitItem.tsx`, the title animation code was using scale transforms:
+```tsx
+// OPEN - was using scaleX/scaleY which caused zoom effect
+gsap.fromTo(titleEl, {
+  x: deltaX, y: deltaY,
+  scaleX: scaleX,  // <-- PROBLEM
+  scaleY: scaleY,
+}, { ... });
+
+// CLOSE - was using scaleRatio which caused zoom effect
+tl.to(modalTitle, {
+  x: deltaX, y: deltaY,
+  scaleX: scaleRatio,  // <-- PROBLEM
+  scaleY: scaleRatio,
+}, ...);
+```
+
+### Changes Made
+Removed all scale transforms from title animation. Now title floats with position-only changes plus subtle opacity for "lifting/landing" effect:
+
+**Open animation (HabitItem.tsx ~lines 129-152):**
+- Removed `scaleX`, `scaleY` from both start and end states
+- Added subtle opacity (0.8 → 1) for "lifting off" effect
+
+**Close animation (HabitItem.tsx ~lines 399-409):**
+- Removed `scaleX`, `scaleY` transforms
+- Added subtle opacity (→ 0.8) for "landing" effect
+
+### Result
+Filmstrips confirm the fix:
+- **Open:** Title maintains consistent size as it glides from card position to modal header
+- **Close:** Title maintains consistent size as it floats from modal header to card position
+- Title is readable throughout every frame (no tiny/distorted text)
+- Clear position change (traveling through space) rather than scale change (zooming)
+
+### Status
+**FIXED** - Title now floats instead of scales.
 
 <promise>ANIMATION_COMPLETE</promise>
 
