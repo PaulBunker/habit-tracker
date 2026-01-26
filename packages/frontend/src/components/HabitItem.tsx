@@ -54,7 +54,6 @@ export function HabitItem({
   // Animation refs
   const cardRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLElement>(null);
   const flipStateRef = useRef<Flip.FlipState | null>(null);
   const titleRectRef = useRef<DOMRect | null>(null);  // Store card title's absolute position
   const isAnimatingRef = useRef(false);
@@ -130,8 +129,6 @@ export function HabitItem({
     // we create a clone that flies from card position to modal header position.
     // This keeps all modal elements in their natural DOM positions.
     if (modalTitle && titleRect) {
-      console.log('[ANIM] open-before-clone');
-
       // CRITICAL: Capture h2's ACTUAL position BEFORE hiding it
       // This ensures the clone lands exactly where h2 will appear
       const modalTitleRect = modalTitle.getBoundingClientRect();
@@ -160,7 +157,6 @@ export function HabitItem({
         white-space: nowrap;
       `;
       document.body.appendChild(clone);
-      console.log('[ANIM] open-clone-created');
 
       // Use the h2's ACTUAL position as destination (not calculated offsets)
       // This ensures pixel-perfect handoff when clone is removed and h2 revealed
@@ -176,10 +172,8 @@ export function HabitItem({
         ease: 'power2.out',
         onComplete: () => {
           // Remove clone and reveal the real modal title
-          console.log('[ANIM] open-clone-removing');
           clone.remove();
           modalTitle.style.visibility = 'visible';
-          console.log('[ANIM] open-h2-visible');
         },
       });
     }
@@ -390,9 +384,10 @@ export function HabitItem({
 
       // Calculate where modal title is vs where card title will be
       // The card title is inside the ghost at approximately the same relative position
-      // Card title is roughly 48px from left (checkbox space) and centered vertically
-      const cardTitleLeft = ghostRect.left + 48;
-      const cardTitleTop = ghostRect.top + (ghostRect.height / 2) - 10; // rough center
+      const CHECKBOX_WIDTH = 48;  // Checkbox + gap spacing
+      const VERTICAL_OFFSET = 10; // Fine-tune vertical centering
+      const cardTitleLeft = ghostRect.left + CHECKBOX_WIDTH;
+      const cardTitleTop = ghostRect.top + (ghostRect.height / 2) - VERTICAL_OFFSET;
 
       const tl = gsap.timeline({
         onComplete: () => {
@@ -423,7 +418,6 @@ export function HabitItem({
       // Create a clone that flies from modal header to card position
       // This keeps modal layout stable (X button doesn't jump)
       if (modalTitle) {
-        console.log('[ANIM] close-before-clone');
         const modalTitleRect = modalTitle.getBoundingClientRect();
 
         // Create a clone for the flying animation
@@ -445,7 +439,6 @@ export function HabitItem({
           white-space: nowrap;
         `;
         document.body.appendChild(clone);
-        console.log('[ANIM] close-clone-created');
 
         // Hide modal title during clone's flight
         modalTitle.style.opacity = '0';
@@ -460,7 +453,6 @@ export function HabitItem({
           duration: 0.35,
           ease: 'power2.inOut',
           onComplete: () => {
-            console.log('[ANIM] close-clone-removed');
             clone.remove();
           },
         }, '<');
