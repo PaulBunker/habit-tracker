@@ -1,100 +1,48 @@
-# FLIP Animation Polish - Title Float Effect
+# FLIP Animation Fix - Title Float
 
-## Context Recovery
+## Methodology
 
-1. Read `.claude/plans/flip-animation-iteration.md` for iteration log and previous findings
-2. Read `packages/frontend/src/components/HabitItem.tsx` to understand current implementation
-
----
-
-## Resources
-
-**For Animation Patterns:** Use `/gsap-animation-expert` skill
-
-**For Filmstrip Capture & Analysis:** Use `/capture-animation` skill - **READ THIS CAREFULLY**, it contains the rigorous frame-by-frame analysis methodology you MUST follow.
+**Follow `/capture-animation` skill for the complete process.** This prompt only contains task-specific details.
 
 ---
 
-## Full Animation Description (Reference)
+## Context
 
-**Open animation:**
-1. User clicks a habit card in the list
-2. The card **morphs** into the modal - grows/moves from card position to modal position
-3. The **title text floats** from card header (TOP-LEFT of card) to modal header (TOP-LEFT of modal)
-4. The morph completes, then modal content fades/staggers in
-5. **No other elements should jump or shift** - X close button stays in position
-
-**Close animation:**
-1. User clicks close button
-2. Content **staggers out**
-3. Title **floats** from modal header (TOP-LEFT) back toward card position
-4. Container **morphs/shrinks** from modal to card
-5. Card settles in list exactly where it was
+- **Iteration plan:** `.claude/plans/flip-animation-iteration.md`
+- **Component:** `packages/frontend/src/components/HabitItem.tsx`
+- **Animation patterns:** `/gsap-animation-expert` skill
 
 ---
 
-## Current Issues (from human review)
+## Expected Animation
 
-### Issue 1: Title Position Wrong
-Frames 53-320ms: Title floats in CENTER/MIDDLE of modal instead of traveling from card header (top-left) to modal header (top-left).
+**Open:**
+1. User clicks habit card
+2. Card morphs into modal (grows/moves from card to modal position)
+3. Title floats from card header (TOP-LEFT of card) to modal header (TOP-LEFT of modal)
+4. Content staggers in
+5. X close button stays in position (no jumping)
 
-### Issue 2: Title Squashed
-Frame 53ms: Title is visibly squashed/vertically compressed.
-
-### Issue 3: X Button Jumps
-When title extracted from DOM flow, X close button shifts left.
+**Close:**
+1. Content staggers out
+2. Title floats from modal header back to card position
+3. Container morphs/shrinks to card
+4. Card settles in list
 
 ---
 
-## Your Task
+## Current Issues
 
-1. **Capture filmstrips** using `/capture-animation` skill
-2. **Analyze using the methodology in the skill** - fill out frame-by-frame tables
-3. **Diagnose** root causes based on your detailed observations
-4. **Fix** the issues
-5. **Verify using multi-method validation** (see `/capture-animation` skill):
-   - Use **blind sub-agents** to describe frames without context
-   - Compare their descriptions to expected behavior
-   - This removes your bias and catches issues you might assume away
-6. **Document** in the iteration plan
+1. **Title position wrong** - Floats in CENTER of modal, not from card header to modal header
+2. **Title squashed** - Vertically compressed at ~53ms
+3. **X button jumps** - Shifts left when title extracted from DOM
 
 ---
 
 ## Success Criteria
 
-**ALL must be verified frame-by-frame (see `/capture-animation` skill for methodology):**
-
 - [ ] Title travels from card header (top-left) to modal header (top-left)
-- [ ] Title is NOT in center/middle of screen at any frame
-- [ ] Title is NOT squashed at any frame
-- [ ] Title is NOT stretched at any frame
-- [ ] X button does NOT jump or shift at any frame
-- [ ] No other elements jump or shift
-
----
-
-## Exit Conditions
-
-**SUCCESS:** All criteria verified with frame-by-frame evidence → add `<promise>ANIMATION_COMPLETE</promise>`
-
-**STUCK (4-5 iterations without progress):**
-Before giving up, launch research agents to expand the knowledge base:
-```
-1. Search web for techniques related to the specific issue
-2. Add findings to .claude/skills/gsap-animation-expert/examples/
-3. Try again with new knowledge
-```
-If still stuck after research → add `<stuck>NEEDS_HUMAN_REVIEW</stuck>`
-
-**OTHERWISE:** Exit with detailed frame-by-frame analysis showing what's still wrong.
-
----
-
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| `packages/frontend/src/components/HabitItem.tsx` | Component with title animation |
-| `packages/frontend/src/App.css` | Styles |
-| `.claude/plans/flip-animation-iteration.md` | Iteration log |
-| `scripts/animation-configs/flip-modal.json` | Capture settings |
+- [ ] Title NOT in center of screen at any frame
+- [ ] Title NOT squashed/stretched at any frame
+- [ ] X button does NOT jump at any frame
+- [ ] No other elements jump unexpectedly
