@@ -1,0 +1,24 @@
+{
+  "name": "FLIP Playground Animation",
+  "description": "Card-to-modal FLIP animation from playground test page",
+  "url": "http://localhost:5174/flip-playground",
+  "postNavWait": 300,
+  "animations": {
+    "open": {
+      "setup": [{ "waitFor": ".card" }],
+      "trigger": { "click": ".card" },
+      "duration": 800,
+      "frames": 10
+    },
+    "close": {
+      "setup": [
+        { "waitFor": ".card" },
+        { "click": ".card" },
+        { "wait": 1000 }
+      ],
+      "trigger": { "click": ".modal-close" },
+      "duration": 800,
+      "frames": 10
+    }
+  }
+}
