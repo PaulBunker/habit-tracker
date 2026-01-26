@@ -193,9 +193,18 @@ None - verification only.
 - Close animation: Smooth fade-out, no double bounce or off-screen elements
 
 ### Status
-**FIXED**
+**PARTIAL** - Open animation is good. Close animation uses fade-out which works but isn't the intended morph effect.
 
-<promise>ANIMATION_COMPLETE</promise>
+~~<promise>ANIMATION_COMPLETE</promise>~~ REVOKED - Close animation needs to be a proper morph, not a fade.
+
+---
+
+## Next Focus: Close Animation Morph
+
+**What we have:** Fade-out on close (no double bounce, but not a morph)
+**What we want:** Modal morphs/shrinks back to card position (reverse of open)
+
+The challenge: Modal is `position: fixed` centered, card is `position: relative` in list flow. FLIP needs to animate between these positions smoothly.
 
 ---
 
@@ -232,9 +241,53 @@ npm run dev
 - [x] Title arrives at modal header position by frame ~250ms
 
 ### Close Animation
-- [x] No double bounce/jump (uses timeline fade-out instead of FLIP)
-- [x] Smooth fade-out from modal (content fades first, then modal shrinks/fades)
+- [x] No double bounce/jump
+- [x] Modal morphs/shrinks toward card position (not just fade)
+- [x] Title floats from modal header toward card position
+- [x] Content fades first, then container morphs
 - [x] No elements appearing off-screen
+- [x] Card settles exactly where it was in the list
+
+---
+
+## Iteration 5 (2026-01-26 00:25) - Close Animation Morph
+
+### Observed (Before)
+The close animation was a simple fade-out:
+- Frames 0-77ms: Content fading
+- Frames 103-181ms: Modal shrinking in place and fading
+- Frame 206ms: Modal disappears, card appears in list
+- No morph effect - modal just faded and card popped into existence
+
+### Diagnosis
+The previous implementation used a gsap.timeline with scale/opacity animation but didn't calculate the target position (where the card would be). The modal shrank in place rather than morphing toward the card's list position.
+
+### Changes Made
+Rewrote `handleModalClose` to:
+1. Get the ghost placeholder's position (maintains card space in list)
+2. Calculate translation and scale to morph modal to ghost's position/size
+3. Animate modal title independently toward estimated card title position
+4. Use timeline: content fade → title float + container morph → final fade
+
+Key code changes in HabitItem.tsx lines 344-438:
+- Get `ghostRect` from `.checklist-item--ghost`
+- Calculate `translateX`, `translateY`, `scaleX`, `scaleY` to move modal to ghost position
+- Animate modal with `gsap.to()` using calculated transforms
+- Animate title with estimated delta to card title position
+
+### Result
+Filmstrip shows proper morph:
+- Frames 0-77ms: Content fades out
+- Frames 103-310ms: Modal shrinks AND moves toward card position (visible morph!)
+- Frame 335ms: Modal fades out at target position
+- Frame 361ms+: List view with card in place
+
+### Status
+**FIXED** - Both open and close animations now work as intended:
+- Open: Card morphs to modal, title floats independently
+- Close: Modal morphs back to card position, title floats back
+
+<promise>ANIMATION_COMPLETE</promise>
 
 ---
 

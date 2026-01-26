@@ -340,12 +340,37 @@ export function HabitItem({
     }
   };
 
-  // Animate modal closing, then trigger collapse
+  // Animate modal closing with FLIP morph back to card position
   const handleModalClose = contextSafe((): void => {
     if (modalRef.current && !isAnimatingRef.current) {
       isAnimatingRef.current = true;
 
-      // Animate modal shrinking/fading, then collapse
+      const modal = modalRef.current;
+
+      // Find the ghost placeholder to get target position
+      const ghost = document.querySelector('.checklist-item--ghost') as HTMLElement;
+      if (!ghost) {
+        // Fallback: just collapse without animation
+        isAnimatingRef.current = false;
+        onCollapse();
+        return;
+      }
+
+      // Get ghost's position (where the card will be after collapse)
+      const ghostRect = ghost.getBoundingClientRect();
+
+      // Get modal's current position
+      const modalRect = modal.getBoundingClientRect();
+
+      // Get title elements for independent title animation
+      const modalTitle = modal.querySelector('[data-flip-id^="title-"]') as HTMLElement;
+
+      // Calculate where modal title is vs where card title will be
+      // The card title is inside the ghost at approximately the same relative position
+      // Card title is roughly 48px from left (checkbox space) and centered vertically
+      const cardTitleLeft = ghostRect.left + 48;
+      const cardTitleTop = ghostRect.top + (ghostRect.height / 2) - 10; // rough center
+
       const tl = gsap.timeline({
         onComplete: () => {
           isAnimatingRef.current = false;
@@ -353,31 +378,66 @@ export function HabitItem({
         },
       });
 
-      // Fade out content first
-      tl.to(modalRef.current.querySelectorAll('.view-buttons, .settings-form, .settings-actions'), {
+      // Fade out content first (stagger from end)
+      tl.to(modal.querySelectorAll('.view-buttons, .settings-form, .settings-actions'), {
         opacity: 0,
         y: -10,
-        stagger: 0.02,
-        duration: 0.15,
+        stagger: { each: 0.02, from: 'end' },
+        duration: 0.12,
         ease: 'power2.in',
       });
 
-      // Then shrink and fade the modal container
-      tl.to(modalRef.current, {
-        scale: 0.95,
-        opacity: 0,
-        duration: 0.2,
-        ease: 'power2.in',
-      }, '-=0.1');
-
-      // Also fade the backdrop
+      // Fade the backdrop in parallel with morph
       const backdrop = document.querySelector('.modal-overlay-backdrop');
       if (backdrop) {
         tl.to(backdrop, {
           opacity: 0,
-          duration: 0.2,
+          duration: 0.35,
+        }, '-=0.05');
+      }
+
+      // Animate title floating from modal header to card position
+      if (modalTitle) {
+        const modalTitleRect = modalTitle.getBoundingClientRect();
+        const deltaX = cardTitleLeft - modalTitleRect.left;
+        const deltaY = cardTitleTop - modalTitleRect.top;
+        // Card title is smaller, estimate scale
+        const scaleRatio = 0.75;
+
+        tl.to(modalTitle, {
+          x: deltaX,
+          y: deltaY,
+          scaleX: scaleRatio,
+          scaleY: scaleRatio,
+          transformOrigin: 'top left',
+          duration: 0.35,
+          ease: 'power2.inOut',
         }, '<');
       }
+
+      // Morph modal to ghost's size and position
+      // Calculate the transform needed to move modal to ghost position
+      const translateX = ghostRect.left + ghostRect.width / 2 - (modalRect.left + modalRect.width / 2);
+      const translateY = ghostRect.top + ghostRect.height / 2 - (modalRect.top + modalRect.height / 2);
+      const scaleX = ghostRect.width / modalRect.width;
+      const scaleY = ghostRect.height / modalRect.height;
+
+      tl.to(modal, {
+        x: translateX,
+        y: translateY,
+        scaleX: scaleX,
+        scaleY: scaleY,
+        borderRadius: '8px',
+        duration: 0.35,
+        ease: 'power2.inOut',
+      }, '<');
+
+      // Fade modal out at the very end of the morph
+      tl.to(modal, {
+        opacity: 0,
+        duration: 0.1,
+        ease: 'power2.in',
+      }, '-=0.1');
     } else {
       onCollapse();
     }
