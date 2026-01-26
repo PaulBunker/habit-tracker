@@ -52,7 +52,10 @@ When title extracted from DOM flow, X close button shifts left.
 2. **Analyze using the methodology in the skill** - fill out frame-by-frame tables
 3. **Diagnose** root causes based on your detailed observations
 4. **Fix** the issues
-5. **Verify** with another round of rigorous frame-by-frame analysis
+5. **Verify using multi-method validation** (see `/capture-animation` skill):
+   - Use **blind sub-agents** to describe frames without context
+   - Compare their descriptions to expected behavior
+   - This removes your bias and catches issues you might assume away
 6. **Document** in the iteration plan
 
 ---

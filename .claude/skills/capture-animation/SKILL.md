@@ -199,6 +199,93 @@ Create JSON in `scripts/animation-configs/`:
 
 ---
 
+# Multi-Method Validation (Recommended for Critical Animations)
+
+For high-confidence validation, use multiple methods. This catches issues that biased observation might miss.
+
+## Method 1: Blind Frame Description (Sub-Agents)
+
+Launch sub-agents with **NO CONTEXT** about what the animation should do. They can only describe what they literally see.
+
+```markdown
+For each frame, launch a sub-agent with this prompt:
+
+"Describe this image literally. Answer these questions:
+1. What UI elements do you see?
+2. Where is each text element positioned? (top-left, center, bottom, etc.)
+3. Are any text elements distorted? (squashed vertically, stretched horizontally, normal)
+4. Where are any buttons/icons positioned?
+5. What is the overall layout?
+
+Do NOT make assumptions about what this is or what it should look like.
+Just describe what you see."
+```
+
+**Why this works:** Sub-agents have no context about the animation, so they can't assume "the title is probably floating correctly." They describe raw observations.
+
+## Method 2: Frame Comparison (Sub-Agents)
+
+Compare consecutive frames to detect changes:
+
+```markdown
+"Compare these two images (Frame A and Frame B).
+1. What elements moved? From where to where?
+2. What elements changed size or shape?
+3. What elements appeared or disappeared?
+4. Did any element jump suddenly vs move smoothly?
+
+Be specific with positions and measurements."
+```
+
+## Method 3: Expectation Matching (Main Agent)
+
+After collecting blind descriptions, the main agent (with context) compares:
+
+```markdown
+EXPECTED: Title should be at top-left of modal header
+BLIND DESCRIPTION: "Text element 'Morning Exercise' is positioned in center of white rectangle"
+VERDICT: MISMATCH - title is in wrong position
+```
+
+## Implementation Pattern
+
+```typescript
+// Pseudo-code for multi-method validation
+async function validateAnimation(filmstripPath: string) {
+  // 1. Blind descriptions (sub-agents, no context)
+  const blindDescriptions = await Promise.all(
+    frames.map(frame =>
+      launchSubAgent({
+        prompt: `Describe this image literally: ${frame}`,
+        context: null // NO CONTEXT
+      })
+    )
+  );
+
+  // 2. Frame comparisons (sub-agents)
+  const comparisons = await Promise.all(
+    frames.slice(1).map((frame, i) =>
+      launchSubAgent({
+        prompt: `Compare frame ${i} to frame ${i+1}`,
+        context: null
+      })
+    )
+  );
+
+  // 3. Main agent matches against expectations
+  return analyzeWithExpectations(blindDescriptions, comparisons, expectedBehavior);
+}
+```
+
+## When to Use Multi-Method
+
+- **Critical animations** where bugs have been missed before
+- **Complex animations** with multiple moving elements
+- **After claiming "fixed"** - verify with blind review
+- **When you're uncertain** - remove your own bias
+
+---
+
 # Important
 
 DO NOT use playwright MCP tools for iterative animation debugging - they are expensive.
