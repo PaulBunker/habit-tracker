@@ -11,151 +11,200 @@
 
 **For Guidance:** Use `/gsap-animation-expert` skill - it has FLIP plugin patterns, `data-flip-id` matching, and element morphing techniques.
 
-**For Feedback:** Use `scripts/capture-animation-unified.js` - the filmstrips are ground truth. Don't guess; capture and look.
+**For Feedback:** Use `scripts/capture-animation-unified.js` - the filmstrips are ground truth.
 
 ---
 
-## Goal
+## Full Animation Description (Reference)
 
-Polish the title animation so it **floats/morphs** rather than **scales/zooms**.
+This is what the complete animation should look like when working correctly:
 
-### Current Behavior (wrong)
-The title **scales** during the animation:
-- Open: Title starts small and grows larger (zoom in effect)
-- Close: Title shrinks from large to small (zoom out effect)
+**Open animation:**
+1. User clicks a habit card in the list
+2. The card **morphs** into the modal - it grows/moves from card position to modal position
+3. During the morph, the **title text floats** independently - it travels from where it was in the card (TOP-LEFT of the card) to where it will be in the modal header (TOP-LEFT of the modal)
+4. The morph completes, then modal content fades/staggers in
+5. **No other elements should jump or shift** - the X close button should stay in position
 
-### Desired Behavior (correct)
-The title **floats** during the animation:
-- Open: Title lifts off the card and glides to the modal header, maintaining roughly the same visual size throughout, transitioning smoothly to the final size
-- Close: Title lifts off the modal header and glides back to the card position
-
-**Key difference:**
-- Scaling = element grows/shrinks in place (zoom)
-- Floating = element travels through space while morphing size naturally
-
-Think of it like a playing card being tossed from one hand to another - it doesn't shrink then grow, it moves through space.
+**Close animation:**
+1. User clicks close button
+2. Content **staggers out** (reverse of stagger in)
+3. Title **floats** from modal header (TOP-LEFT) back toward card position (TOP-LEFT of where card will be)
+4. Container **morphs/shrinks** from modal to card
+5. Card settles in list exactly where it was
+6. Single smooth sequence - no jump, no double bounce
 
 ---
 
-## Your Approach
+## Current Focus: Title Animation Issues
 
-### 1. Capture Current State
+**We are focusing on fixing the title.** Multiple issues exist:
+
+### Issue 1: Title Position Wrong
+The title floats in the CENTER/MIDDLE of the modal during animation instead of traveling from card header position (top-left) to modal header position (top-left).
+
+### Issue 2: Title Still Squashed
+At frame 53ms, the title is visibly squashed/vertically compressed.
+
+### Issue 3: X Button Jumps
+When the title is extracted from DOM flow, the X close button shifts/jumps to the left because it loses its positioning reference.
+
+---
+
+## YOUR APPROACH - EXTREMELY DETAILED IMAGE ANALYSIS
+
+### Step 1: Capture Filmstrips
 
 ```bash
-# Ensure dev server is running on port 5174
 node scripts/capture-animation-unified.js flip-modal --animations=open
 node scripts/capture-animation-unified.js flip-modal --animations=close
 ```
 
-### 2. Analyze the Filmstrips
+### Step 2: Describe EXACTLY What You See - Frame by Frame
 
-Read the images in `.playwright-mcp/`:
-- `filmstrip-flip-modal-open.png`
-- `filmstrip-flip-modal-close.png`
+**BEFORE making ANY judgments, describe each frame in detail.**
 
-**Look specifically at the title:**
-- Does the title text appear to travel/move through space?
-- Or does it appear to scale/zoom (grow or shrink)?
-- At what frames does the title transition occur?
-- Is the title readable throughout, or does it get tiny/distorted?
+For EACH frame, write down:
 
-### 3. Diagnose the Problem
+| Frame | Title Position (where on screen?) | Title Shape (squashed/normal/stretched?) | X Button Position | Other Observations |
+|-------|-----------------------------------|------------------------------------------|-------------------|-------------------|
+| 0ms   | [e.g., "top-left of card"] | [e.g., "normal proportions"] | [e.g., "top-right of card"] | [anything else] |
+| 53ms  | [WHERE is the title?] | [IS it squashed?] | [WHERE is X?] | |
+| 107ms | ... | ... | ... | |
+| etc.  | ... | ... | ... | |
 
-The title is likely being animated with scale transforms rather than position + size morphing.
+**Be LITERAL and SPECIFIC:**
+- "Title is in the CENTER of the screen" not "title is visible"
+- "Title appears vertically compressed to ~50% height" not "title looks off"
+- "X button has moved 100px left from previous frame" not "X button shifted"
 
-**Consult the expert:** Run `/gsap-animation-expert` to understand:
-- How FLIP calculates position vs scale differences
-- How `data-flip-id` matching handles different-sized elements
-- Whether `absolute: true` affects the morph behavior
-- How to animate position independently from scale
+### Step 3: Compare to Expected Behavior
 
-Possible causes:
-- Title is inside a scaled container (inherits parent scale)
-- FLIP is calculating scale delta instead of position delta
-- Title animation is using `scale` instead of `x/y` + font-size
+After describing what you see, compare to what SHOULD happen:
 
-### 4. Implement a Fix
+**Expected title path (open):**
+- Frame 0: Title at top-left of card in list
+- Frame 53-160ms: Title should be traveling diagonally from card position toward modal header position (TOP-LEFT corner of modal, not center)
+- Frame 200ms+: Title should arrive at modal header position (top-left of modal)
 
-Focus on making the title **move through space** rather than scale. Consider:
-- Animating title position (x, y) separately from container
-- Using actual position values rather than scale transforms
-- Ensuring title maintains readable size throughout transition
-- Matching start/end positions precisely for smooth handoff
+**Expected X button:**
+- X button should NEVER jump or shift position
+- It should stay in the top-right of the modal throughout
 
-### 5. Verify
+**If what you see doesn't match expected, that's a bug.**
+
+### Step 4: Diagnose Root Cause
+
+Common issues:
+1. **Title position: fixed with wrong coordinates** - If title is in center, the initial position calculation is wrong
+2. **Title removed from DOM flow** - Breaks layout of sibling elements (X button)
+3. **Counter-scaling not applied** - Title inherits parent scale, gets squashed
+4. **Animation starting point wrong** - fromTo() starting from wrong position
+
+### Step 5: Investigate Further if Needed
+
+If you can't tell what's happening, **adjust the capture settings**:
 
 ```bash
-npm test -w @habit-tracker/frontend -- --run
-node scripts/capture-animation-unified.js flip-modal --animations=open
-node scripts/capture-animation-unified.js flip-modal --animations=close
+# Capture more frames around the problem area
+node scripts/capture-animation-unified.js flip-modal --animations=open --frames=24
+
+# Or edit the config to increase scale further
 ```
 
-**Check the filmstrips critically:**
-- Can you read the title text in every frame during the morph?
-- Does the title appear to travel horizontally/vertically?
-- Is it clearly moving position, not just scaling?
+You can edit `scripts/animation-configs/flip-modal.json` to:
+- Increase `scale` (e.g., 0.5) for more detail
+- Increase `frames` to capture more moments
+- Adjust `cols` to change layout
 
-### 6. Document and Exit
+### Step 6: Implement Fix
 
-Update `.claude/plans/flip-animation-iteration.md`:
+Based on your DETAILED observations, implement a fix that addresses:
+1. Title must travel from CARD HEADER position to MODAL HEADER position (not center)
+2. Title must maintain aspect ratio throughout (no squashing)
+3. X button must NOT jump or shift
+4. Other elements must not be affected
+
+### Step 7: Verify - Full Frame-by-Frame Analysis Again
+
+After making changes, capture new filmstrips and do the FULL frame-by-frame description again.
+
+**Do NOT say "looks better" or "seems fixed".**
+
+Instead, fill out the same detailed table and compare:
+- Is title now at correct position in each frame?
+- Is title aspect ratio correct in each frame?
+- Does X button stay in place?
+
+### Step 8: Document
+
+Update `.claude/plans/flip-animation-iteration.md` with:
 
 ```markdown
-## Iteration N (YYYY-MM-DD HH:MM) - Title Float Polish
+## Iteration N (YYYY-MM-DD HH:MM)
 
-### Observed (Before)
-[Describe the title behavior in filmstrip - scaling? floating? at which frames?]
+### Frame-by-Frame Analysis (Before)
+| Frame | Title Position | Title Shape | X Button | Notes |
+|-------|---------------|-------------|----------|-------|
+| 0ms   | ... | ... | ... | ... |
+| 53ms  | ... | ... | ... | ... |
+[continue for ALL frames]
 
-### Diagnosis
-[What's causing the scale effect instead of float?]
+### Issues Identified
+1. [specific issue with specific frames]
+2. [specific issue with specific frames]
+
+### Root Cause
+[what code is causing these issues]
 
 ### Changes Made
-[What you changed to make it float instead of scale]
+[what you changed and why]
 
-### Result
-[What the filmstrips show after - is it floating now?]
+### Frame-by-Frame Analysis (After)
+| Frame | Title Position | Title Shape | X Button | Notes |
+|-------|---------------|-------------|----------|-------|
+| 0ms   | ... | ... | ... | ... |
+| 53ms  | ... | ... | ... | ... |
+[continue for ALL frames]
+
+### Remaining Issues
+[any issues that still exist - be honest]
 
 ### Status
 [FIXED / PARTIAL / NOT FIXED]
-
-### Next Steps (if not fixed)
-[What to try next]
-```
-
-Commit:
-```bash
-git add -A
-git commit -m "feat(animation): iteration N - [brief description]"
 ```
 
 ---
 
 ## Exit Conditions
 
-**If title properly floats (not scales):**
+**SUCCESS - only if ALL of these are verified frame-by-frame:**
+- [ ] Title travels from card header (top-left of card) to modal header (top-left of modal)
+- [ ] Title is NOT in center/middle of screen at any frame
+- [ ] Title is NOT squashed at any frame (including 53ms)
+- [ ] Title is NOT stretched at any frame
+- [ ] X button does NOT jump or shift at any frame
+- [ ] No other elements jump or shift unexpectedly
+
 Add to iteration log: `<promise>ANIMATION_COMPLETE</promise>`
 
 **If stuck after 3+ attempts:**
 Add to iteration log: `<stuck>NEEDS_HUMAN_REVIEW</stuck>`
-Include: what you tried, what you observed, specific questions
 
 **Otherwise:**
-Exit cleanly. Document findings for next iteration.
+Exit with DETAILED frame-by-frame analysis showing exactly what's still wrong.
 
 ---
 
-## Success Criteria
+## Anti-Patterns - DO NOT DO THESE
 
-### Title Float Effect
-- [ ] Title text readable throughout the morph (not tiny/distorted)
-- [ ] Title visibly moves through space (position change, not just scale)
-- [ ] Title travels from card position to modal header (open)
-- [ ] Title travels from modal header to card position (close)
-- [ ] Smooth transition - no sudden jumps or size pops
-
-### What to Avoid
-- [ ] Title should NOT shrink to tiny size then grow
-- [ ] Title should NOT appear to zoom in/out
-- [ ] Title should NOT be unreadable at any point during morph
+- ❌ "Title looks good" - WRONG. Describe exactly where the title IS.
+- ❌ "Animation seems smooth" - WRONG. Describe each frame specifically.
+- ❌ "No obvious issues" - WRONG. Fill out the frame-by-frame table.
+- ❌ Claiming success without frame-by-frame evidence
+- ❌ Skipping frames in your analysis
+- ❌ Using vague words like "appears", "seems", "looks like"
+- ❌ Making changes without first describing current state in detail
 
 ---
 
@@ -167,3 +216,4 @@ Exit cleanly. Document findings for next iteration.
 | `packages/frontend/src/App.css` | Styles that might affect title |
 | `.claude/plans/flip-animation-iteration.md` | Iteration log |
 | `.claude/skills/gsap-animation-expert/SKILL.md` | FLIP reference |
+| `scripts/animation-configs/flip-modal.json` | Filmstrip capture settings (adjust if needed) |

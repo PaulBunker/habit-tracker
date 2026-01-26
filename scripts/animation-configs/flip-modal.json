@@ -5,15 +5,16 @@
   "postNavWait": 500,
   "viewport": { "width": 800, "height": 600 },
   "filmstrip": {
-    "scale": 0.1,
-    "cols": 20
+    "scale": 0.35,
+    "cols": 8,
+    "labelHeight": 18
   },
   "animations": {
     "open": {
       "setup": [{ "waitFor": ".checklist-item" }],
       "trigger": { "click": ".checklist-item" },
       "duration": 800,
-      "frames": 32
+      "frames": 16
     },
     "close": {
       "setup": [
@@ -23,7 +24,7 @@
       ],
       "trigger": { "click": ".close-btn" },
       "duration": 800,
-      "frames": 32
+      "frames": 16
     }
   }
 }
