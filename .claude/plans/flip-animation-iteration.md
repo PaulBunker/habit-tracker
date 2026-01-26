@@ -164,6 +164,41 @@ if (modalRef.current && !isAnimatingRef.current) {
 
 ---
 
+## Iteration 4 (2026-01-26 00:13) - Verification
+
+### Observed
+Re-captured filmstrips to verify Iteration 3 fix is working:
+
+**Open animation:**
+- Frames 0-52ms: Card list visible
+- Frames 77-206ms: Container morphs, title visible during transition
+- Frames 232-310ms: Modal fully expanded
+- Frames 335ms+: Content staggers in smoothly
+
+**Close animation:**
+- Frames 0-77ms: Content fades out
+- Frames 103-181ms: Modal shrinks and fades
+- Frames 206-284ms: Transition completes
+- Frames 310ms+: List view restored cleanly
+
+### Diagnosis
+No issues found. Both animations working as expected.
+
+### Changes Made
+None - verification only.
+
+### Result
+- All 77 tests pass
+- Open animation: Title floats during morph (visible throughout transition)
+- Close animation: Smooth fade-out, no double bounce or off-screen elements
+
+### Status
+**FIXED**
+
+<promise>ANIMATION_COMPLETE</promise>
+
+---
+
 ## Key Files
 
 - **Component**: `packages/frontend/src/components/HabitItem.tsx`
