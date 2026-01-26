@@ -449,6 +449,18 @@
   overflow-y: auto;
 }
 
+/* Modal with FLIP animation - positioned fixed, centered via margin */
+.modal--flip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  height: fit-content;
+  z-index: 1001;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;

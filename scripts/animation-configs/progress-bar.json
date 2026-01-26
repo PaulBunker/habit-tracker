@@ -1,0 +1,22 @@
+{
+  "name": "Progress Bar Animation",
+  "description": "Deterministic progress bar for capture verification",
+  "url": "http://localhost:5174/animation-test",
+  "postNavWait": 100,
+  "animations": {
+    "fill": {
+      "setup": [{ "waitFor": "#start-button" }],
+      "trigger": { "click": "#start-button" },
+      "duration": 1000,
+      "frames": 11,
+      "verify": {
+        "selector": "[data-testid='progress-bar']",
+        "attribute": "data-progress",
+        "tolerance": 0.05
+      }
+    }
+  },
+  "filmstrip": {
+    "backgroundColor": "#1a1a2e"
+  }
+}

@@ -1,94 +1,321 @@
 ---
 name: capture-animation
-description: Capture animation frames for visual debugging. Use capture scripts instead of browser automation.
-allowed-tools: Bash, Read
+description: Capture and analyze animation frames for visual debugging. Complete methodology for iterative animation fixes.
+allowed-tools: Bash, Read, Task, Glob, Grep, Edit, Write
 ---
 
-# Capture Animation
+# Animation Debugging Skill
 
-Use this for visual debugging of animations. ALWAYS prefer this over playwright MCP tools.
+Use this skill for iterative animation debugging. It provides the complete methodology - your task prompt only needs to specify what the animation should look like and what's currently wrong.
 
-## Quick Commands
+---
+
+## Phase 1: Capture Filmstrips
 
 ```bash
-# Capture modal open animation
-node scripts/capture-animation-unified.js modal open
+# Capture specific animation
+node scripts/capture-animation-unified.js <config> <animation>
 
-# Capture modal close animation
-node scripts/capture-animation-unified.js modal close
-
-# Capture all animations in a config
-node scripts/capture-animation-unified.js modal
-
-# Test capture pipeline with verification
-node scripts/capture-animation-unified.js progress-bar fill --verify
+# Examples
+node scripts/capture-animation-unified.js flip-modal open
+node scripts/capture-animation-unified.js flip-modal close
 
 # List available configs
 node scripts/capture-animation-unified.js --list
+
+# More frames for finer detail
+node scripts/capture-animation-unified.js flip-modal open --frames=24
 ```
 
-## CLI Options
+### Adjusting Capture Settings
 
-| Option | Description |
-|--------|-------------|
-| `--frames=N` | Override frame count |
-| `--duration=MS` | Override animation duration |
-| `--verify` | Run verification (if config supports it) |
-| `--output=DIR` | Output directory (default: `.playwright-mcp`) |
-| `--list` | List available configs |
-
-## Output
-
-Filmstrip images saved to `.playwright-mcp/` directory with naming:
-- `filmstrip-{config}-{animation}.png`
-
-## Available Configs
-
-| Config | Animations | Description |
-|--------|------------|-------------|
-| `modal` | open, close | Card-to-modal animation from habit tracker |
-| `progress-bar` | fill | Deterministic progress bar for verification |
-
-## Adding New Animations
-
-Create a JSON config in `scripts/animation-configs/` following this schema:
+Edit `scripts/animation-configs/<config>.json`:
 
 ```json
 {
-  "name": "Animation Name",
-  "description": "Description",
-  "url": "http://localhost:5174/page",
-  "postNavWait": 300,
-  "animations": {
-    "animationName": {
-      "setup": [
-        { "waitFor": ".selector" },
-        { "click": ".selector" },
-        { "wait": 500 }
-      ],
-      "trigger": { "click": ".trigger-selector" },
-      "duration": 800,
-      "frames": 10,
-      "verify": {
-        "selector": "[data-testid='element']",
-        "attribute": "data-progress",
-        "tolerance": 0.05
-      }
-    }
-  },
   "filmstrip": {
-    "backgroundColor": "#1a1a2e",
-    "scale": 0.5,
-    "cols": 6
+    "scale": 0.35,     // Larger = more detail (0.1=tiny, 0.5=large)
+    "cols": 8,         // Fewer cols = bigger frames
+    "labelHeight": 18  // Smaller = more frame space
+  },
+  "animations": {
+    "open": {
+      "frames": 16,    // More frames = finer timing
+      "duration": 800
+    }
   }
 }
 ```
 
-## IMPORTANT
+### Console-Triggered Captures (Advanced)
 
-DO NOT use playwright MCP tools for iterative animation debugging - they are expensive.
-Use this script instead, then view the filmstrip images with:
+For precise debugging of handoff moments (clone swaps, element reveals), use console-triggered captures instead of time-based captures.
+
+**How it works:**
+1. Add `[ANIM]` console markers to your code at key moments
+2. Run capture with `--console` flag
+3. Script captures frames at marker times (plus optional offset before/after)
+
+**Add markers to your animation code:**
+```javascript
+// In HabitItem.tsx (or similar)
+document.body.appendChild(clone);
+console.log('[ANIM] open-clone-created');
+
+// Later, when clone is removed:
+console.log('[ANIM] open-clone-removing');
+clone.remove();
+modalTitle.style.visibility = 'visible';
+console.log('[ANIM] open-h2-visible');
+```
+
+**Run console-triggered capture:**
+```bash
+# Capture frame at each [ANIM] marker
+node scripts/capture-animation-unified.js flip-modal open --console
+
+# Capture 50ms before and after each marker (for context)
+node scripts/capture-animation-unified.js flip-modal open --console --console-offset=50
+```
+
+**Current markers in HabitItem.tsx:**
+| Marker | Description |
+|--------|-------------|
+| `[ANIM] open-clone-created` | Clone appended to body for open animation |
+| `[ANIM] open-clone-removing` | Just before clone is removed |
+| `[ANIM] open-h2-visible` | Real h2 element visibility restored |
+| `[ANIM] close-clone-created` | Clone appended for close animation |
+| `[ANIM] close-clone-removed` | Clone removed at end of close |
+
+**When to use console-triggered vs time-based:**
+- **Time-based**: Understanding overall animation flow, checking timing
+- **Console-triggered**: Debugging specific handoff moments (clone↔real element swaps)
+
+---
+
+## Phase 2: Analyze Filmstrips
+
+### Step 1: Frame-by-Frame Description Table
+
+**BEFORE making ANY judgments**, describe each frame literally:
+
+| Frame | Element Positions | Element Shapes | Layout Changes | Notes |
+|-------|-------------------|----------------|----------------|-------|
+| 0ms   | [WHERE is each element?] | [squashed/normal?] | [any jumps?] | |
+| 53ms  | [be SPECIFIC] | [be SPECIFIC] | [be SPECIFIC] | |
+| 107ms | ... | ... | ... | |
+
+### Step 2: Use Specific Language
+
+| ❌ Don't Say | ✅ Say Instead |
+|-------------|----------------|
+| "Looks good" | "Title at top-left, 20px margins, normal proportions" |
+| "Seems smooth" | "Each frame shows ~10px movement, consistent spacing" |
+| "Title is floating" | "Title is at center of screen, 200px from top" |
+| "No obvious issues" | [Fill out the table first] |
+
+### Step 3: Compare to Expected Behavior
+
+```
+EXPECTED: [What the prompt says should happen]
+OBSERVED: [What you literally see in the filmstrip]
+VERDICT:  [MATCH or BUG - be specific about which frames]
+```
+
+---
+
+## Phase 3: Multi-Method Validation
+
+For high confidence, use multiple validation methods:
+
+### Method 1: Blind Sub-Agent Description
+
+Launch sub-agents with **NO CONTEXT** about what the animation should do:
+
+```
+Prompt for sub-agent:
+"Describe this image literally:
+1. What UI elements do you see?
+2. Where is each text element positioned? (top-left, center, etc.)
+3. Are any elements distorted? (squashed, stretched, normal)
+4. Where are buttons/icons positioned?
+Do NOT assume what this should look like. Just describe what you see."
+```
+
+**Why:** Sub-agents can't assume "it's probably fine" - they only describe raw observations.
+
+### Method 2: Frame Comparison
+
+Compare consecutive frames:
+
+```
+"Compare Frame A and Frame B:
+1. What elements moved? From where to where?
+2. What changed size or shape?
+3. Did anything jump suddenly vs move smoothly?"
+```
+
+### Method 3: Expectation Matching
+
+Main agent compares blind descriptions to expected behavior:
+
+```
+EXPECTED: Title at top-left of modal header
+BLIND DESCRIPTION: "Text 'Morning Exercise' is in center of white rectangle"
+VERDICT: MISMATCH - title position wrong
+```
+
+---
+
+## Phase 4: Diagnose & Fix
+
+### Consult Animation Expert
+
+Use `/gsap-animation-expert` skill for:
+- FLIP plugin patterns
+- Nested element handling
+- Counter-scaling techniques
+- Hero animation patterns
+
+Examples are in `.claude/skills/gsap-animation-expert/examples/`
+
+### Common Issues & Causes
+
+| Symptom | Likely Cause |
+|---------|--------------|
+| Element squashed | Inheriting parent scale transforms |
+| Element in wrong position | Position calculated incorrectly, or animated from wrong start |
+| Sibling elements jump | Element removed from DOM flow |
+| Animation jumps/stutters | Timing mismatch, or transform-origin conflict |
+
+---
+
+## Phase 5: Verify Fix
+
+After making changes:
+
+1. **Capture new filmstrips**
+2. **Fill out frame-by-frame table again** (don't skip this)
+3. **Use blind sub-agents** for critical frames
+4. **Compare before/after** tables explicitly
+
+**Do NOT claim success without frame-by-frame evidence.**
+
+---
+
+## Phase 6: Document Iteration
+
+Update the iteration plan file with:
+
+```markdown
+## Iteration N (YYYY-MM-DD HH:MM)
+
+### Frame-by-Frame Analysis (Before)
+| Frame | Position | Shape | Layout | Notes |
+|-------|----------|-------|--------|-------|
+| 0ms   | ... | ... | ... | ... |
+
+### Issues Identified
+1. [specific issue at specific frames]
+
+### Diagnosis
+[root cause]
+
+### Changes Made
+[what and why]
+
+### Frame-by-Frame Analysis (After)
+| Frame | Position | Shape | Layout | Notes |
+|-------|----------|-------|--------|-------|
+| 0ms   | ... | ... | ... | ... |
+
+### Status
+[FIXED / PARTIAL / NOT FIXED]
+
+### Remaining Issues
+[be honest]
+```
+
+---
+
+## Phase 7: Exit Conditions
+
+### SUCCESS
+All criteria verified frame-by-frame → add `<promise>ANIMATION_COMPLETE</promise>`
+
+### STUCK (4-5 iterations without progress)
+
+Before giving up, expand the knowledge base:
+
+1. **Launch research agents** to search for techniques related to the specific issue
+2. **Add findings** to `.claude/skills/gsap-animation-expert/examples/`
+3. **Retry** with new knowledge
 
 ```bash
-open .playwright-mcp/filmstrip-modal-open.png
+# Example research prompts:
+# "GSAP FLIP nested element animation"
+# "GSAP counter-scaling child elements"
+# "React FLIP hero text animation"
+```
+
+If still stuck after research → add `<stuck>NEEDS_HUMAN_REVIEW</stuck>`
+
+### OTHERWISE
+
+Exit cleanly with detailed frame-by-frame analysis showing exactly what's still wrong. Your documented findings help the next iteration.
+
+---
+
+## Anti-Patterns - NEVER DO THESE
+
+- ❌ Claim success without frame-by-frame evidence
+- ❌ Skip frames in analysis
+- ❌ Use vague words ("appears", "seems", "looks like") without specifics
+- ❌ Make changes without first describing current state
+- ❌ Give up without launching research agents first
+
+---
+
+## Config Reference
+
+### Available Configs
+
+```bash
+node scripts/capture-animation-unified.js --list
+```
+
+### Creating New Configs
+
+Create JSON in `scripts/animation-configs/`:
+
+```json
+{
+  "name": "Animation Name",
+  "url": "http://localhost:5174/page",
+  "viewport": { "width": 800, "height": 600 },
+  "filmstrip": { "scale": 0.35, "cols": 8, "labelHeight": 18 },
+  "animations": {
+    "animationName": {
+      "setup": [{ "waitFor": ".selector" }, { "click": ".trigger" }],
+      "trigger": { "click": ".button" },
+      "duration": 800,
+      "frames": 16
+    }
+  }
+}
+```
+
+---
+
+## Quick Reference
+
+```bash
+# Capture
+node scripts/capture-animation-unified.js flip-modal open
+
+# View filmstrip
+# Use Read tool on .playwright-mcp/filmstrip-flip-modal-open.png
+
+# Consult animation patterns
+# Use /gsap-animation-expert skill
 ```
