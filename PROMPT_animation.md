@@ -77,7 +77,14 @@ When title extracted from DOM flow, X close button shifts left.
 
 **SUCCESS:** All criteria verified with frame-by-frame evidence → add `<promise>ANIMATION_COMPLETE</promise>`
 
-**STUCK:** 3+ attempts without progress → add `<stuck>NEEDS_HUMAN_REVIEW</stuck>`
+**STUCK (4-5 iterations without progress):**
+Before giving up, launch research agents to expand the knowledge base:
+```
+1. Search web for techniques related to the specific issue
+2. Add findings to .claude/skills/gsap-animation-expert/examples/
+3. Try again with new knowledge
+```
+If still stuck after research → add `<stuck>NEEDS_HUMAN_REVIEW</stuck>`
 
 **OTHERWISE:** Exit with detailed frame-by-frame analysis showing what's still wrong.
 

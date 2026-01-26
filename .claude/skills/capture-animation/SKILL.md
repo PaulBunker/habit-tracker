@@ -286,6 +286,27 @@ async function validateAnimation(filmstripPath: string) {
 
 ---
 
+# Research When Stuck Pattern
+
+If you're 4-5 iterations in without progress, expand the knowledge base:
+
+1. **Launch research agents** to search for techniques related to the specific issue
+2. **Add findings** to `.claude/skills/gsap-animation-expert/examples/`
+3. **Try again** with the new knowledge
+
+This builds institutional knowledge - future tasks benefit from past research.
+
+```bash
+# Example: stuck on nested element animation
+# Launch agent to research "GSAP FLIP nested elements", "counter-scaling child elements"
+# Add findings to examples/flip-nested-elements.tsx
+# Retry with new techniques
+```
+
+**Don't give up without expanding the knowledge base first.**
+
+---
+
 # Important
 
 DO NOT use playwright MCP tools for iterative animation debugging - they are expensive.
