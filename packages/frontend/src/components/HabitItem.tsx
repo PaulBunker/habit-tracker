@@ -383,10 +383,8 @@ export function HabitItem({
       const modalTitle = modal.querySelector('[data-flip-id^="title-"]') as HTMLElement;
 
       // Use the card title's exact position captured when opening
-      // This avoids magic numbers and ensures pixel-perfect animation
-      const cardTitleRect = titleRectRef.current;
-      const cardTitleLeft = cardTitleRect?.left ?? ghostRect.left + 48;
-      const cardTitleTop = cardTitleRect?.top ?? ghostRect.top + 20;
+      const cardTitleLeft = titleRectRef.current!.left;
+      const cardTitleTop = titleRectRef.current!.top;
 
       const tl = gsap.timeline({
         onComplete: () => {
